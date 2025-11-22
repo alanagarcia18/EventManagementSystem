@@ -4,8 +4,8 @@ A comprehensive web-based Event Management System built with Flask, featuring au
 
 ## 🏗️ **Creators**
 
-- **Jahzara Broaster** - Backend Development & Database Architecture
-- **Alana Garcia** - Frontend Development & UI/UX Design
+- **Alana Garcia** - Backend Development & Database Architecture
+- **Jahzara Broaster** - Frontend Development & UI/UX Design
 
 ## �� **Quick Start**
 
