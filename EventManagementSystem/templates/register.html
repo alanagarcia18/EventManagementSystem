@@ -1,0 +1,226 @@
+<!--
+Register Page - Event Management System
+User registration for new accounts.
+Connected to: Landing page (back navigation), Login page (existing account), Dashboard (after registration)
+Functionality: Account creation, validation, theme switching
+-->
+{% extends "base.html" %}
+
+{% block title %}Register - Event Manager{% endblock %}
+
+{% block extra_head %}
+<style>
+    :root {
+        --register-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --card-bg: rgba(255, 255, 255, 0.95);
+        --card-border: rgba(255, 255, 255, 0.3);
+        --shadow-color: rgba(0, 0, 0, 0.1);
+    }
+    
+    [data-theme="dark"] {
+        --register-bg: linear-gradient(135deg, #2D3748 0%, #1A202C 100%);
+        --card-bg: rgba(45, 55, 72, 0.95);
+        --card-border: rgba(74, 85, 104, 0.3);
+        --shadow-color: rgba(0, 0, 0, 0.3);
+    }
+
+    .register-container {
+        min-height: 100vh;
+        background: var(--register-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        position: relative;
+        overflow: hidden;
+        transition: background 0.3s ease;
+    }
+    
+    /* Animated background pattern - different animation for register */
+    .register-container::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="rgba(255,255,255,0.1)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient></defs><circle cx="30" cy="30" r="2" fill="url(%23g)"/><circle cx="70" cy="50" r="1.5" fill="url(%23g)"/><circle cx="50" cy="70" r="1" fill="url(%23g)"/><circle cx="80" cy="80" r="0.8" fill="url(%23g)"/><circle cx="20" cy="70" r="1.2" fill="url(%23g)"/></svg>') repeat;
+        animation: float 25s infinite linear reverse;
+        opacity: 0.2;
+    }
+    
+    [data-theme="dark"] .register-container::before {
+        opacity: 0.1; /* Reduce opacity in dark mode */
+    }
+    
+    @keyframes float {
+        0% { transform: translate(-25%, -25%) rotate(0deg); }
+        100% { transform: translate(-25%, -25%) rotate(360deg); }
+    }
+    
+    /* Theme toggle button for register page */
+    .theme-toggle {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        backdrop-filter: blur(20px);
+        transition: all 0.3s ease;
+        z-index: 10;
+        color: var(--text-primary);
+    }
+    
+    .theme-toggle:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 8px 25px var(--shadow-color);
+    }
+
+    .register-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(20px);
+        border-radius: 2rem;
+        padding: 3rem;
+        box-shadow: 0 25px 50px var(--shadow-color);
+        width: 100%;
+        max-width: 500px;
+        position: relative;
+        z-index: 1;
+        border: 1px solid var(--card-border);
+        color: var(--text-primary);
+        transition: all 0.3s ease;
+    }
+
+    .register-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+    }
+    
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--text-primary, #2D3748);
+        padding: 0.75rem 1rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 500;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    
+    .back-btn:hover {
+        background: rgba(255, 255, 255, 1);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .register-icon {
+        font-size: 4rem;
+        background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        display: block;
+        animation: bounce 2s infinite;
+    }
+    
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+        40% { transform: translateY(-10px); }
+        60% { transform: translateY(-5px); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+        <i class="fas fa-moon" id="theme-icon"></i>
+    </button>
+    
+    <!-- Back to Landing Page -->
+    <div style="position: absolute; top: 2rem; left: 2rem; z-index: 10;">
+        <a href="{{ url_for('landing') }}" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+            Back to Home
+        </a>
+    </div>
+    
+    <div class="register-card">
+        <div class="register-header">
+            <i class="fas fa-user-plus register-icon"></i>
+            <h1 class="login-title">Join Us</h1>
+            <p class="login-subtitle">Create your account to get started</p>
+        </div>
+        
+        <form method="POST" action="{{ url_for('register') }}" class="login-form">
+            <div class="form-group">
+                <input type="text" name="name" class="form-input" placeholder="Your full name" required>
+                <i class="fas fa-user input-icon"></i>
+            </div>
+            
+            <div class="form-group">
+                <input type="email" name="email" class="form-input" placeholder="Email address" required>
+            </div>
+            
+            <div class="form-group">
+                <input type="password" name="password" class="form-input" placeholder="Password (minimum 6 characters)" required minlength="6">
+                <i class="fas fa-lock input-icon"></i>
+                <i class="fas fa-envelope input-icon"></i>
+            </div>
+            
+            <button type="submit" class="btn btn-secondary login-btn">
+                <i class="fas fa-user-plus"></i>
+                Create Account
+            </button>
+        </form>
+        
+        <div class="register-link">
+            Already have an account? <a href="{{ url_for('login_page') }}">Sign in here</a>
+        </div>
+    </div>
+</div>
+
+<script>
+// Theme Toggle Functionality for Register Page
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    const themeIcon = document.getElementById('theme-icon');
+    if (themeIcon) {
+        themeIcon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+}
+
+// Load saved theme or default to light
+function loadTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    const themeIcon = document.getElementById('theme-icon');
+    if (themeIcon) {
+        themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+}
+
+// Load theme when page loads
+document.addEventListener('DOMContentLoaded', loadTheme);
+</script>
+{% endblock %}

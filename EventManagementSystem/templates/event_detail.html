@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.title }} - Event Manager{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Back Navigation -->
+    <div class="mb-4">
+        <a href="{{ url_for('events') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i>
+            Back to Events
+        </a>
+    </div>
+    
+    <!-- Event Header -->
+    <div class="card mb-4">
+        <div class="flex justify-between items-start">
+            <div class="flex-1">
+                <div class="flex items-center gap-3 mb-3">
+                    <h1 class="text-3xl font-bold text-primary">{{ event.title }}</h1>
+                    
+                    {% if registered_count >= event.capacity %}
+                        <span class="status-badge status-full">
+                            <i class="fas fa-users"></i>
+                            Event Full
+                        </span>
+                    {% elif is_registered %}
+                        <span class="status-badge status-upcoming">
+                            <i class="fas fa-check-circle"></i>
+                            You're Registered!
+                        </span>
+                    {% else %}
+                        <span class="status-badge status-available">
+                            <i class="fas fa-calendar-plus"></i>
+                            Registration Open
+                        </span>
+                    {% endif %}
+                </div>
+                
+                {% if event.description %}
+                <p class="text-lg text-secondary mb-4">{{ event.description }}</p>
+                {% endif %}
+                
+                <!-- Event Details Grid -->
+                <div class="grid grid-cols-2 gap-6 mb-4">
+                    {% if event.venue_name %}
+                    <div class="flex items-center gap-3">
+                        <div style="font-size: 1.5rem; color: var(--primary-color);">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-primary">Venue</h4>
+                            <p class="text-secondary">{{ event.venue_name }}</p>
+                            {% if event.venue_address %}
+                            <p class="text-sm text-light">{{ event.venue_address }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if event.start %}
+                    <div class="flex items-center gap-3">
+                        <div style="font-size: 1.5rem; color: var(--secondary-color);">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-primary">Schedule</h4>
+                            <p class="text-secondary">{{ event.start }}</p>
+                            {% if event.end %}
+                            <p class="text-sm text-light">Ends: {{ event.end }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if event.organizer_name %}
+                    <div class="flex items-center gap-3">
+                        <div style="font-size: 1.5rem; color: var(--success-color);">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-primary">Organizer</h4>
+                            <p class="text-secondary">{{ event.organizer_name }}</p>
+                            {% if event.organizer_email %}
+                            <p class="text-sm text-light">{{ event.organizer_email }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="flex items-center gap-3">
+                        <div style="font-size: 1.5rem; color: var(--warning-color);">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-primary">Capacity</h4>
+                            <p class="text-secondary">{{ registered_count }}/{{ event.capacity }} attendees</p>
+                            {% if event.capacity %}
+                                {% set percentage = (registered_count / event.capacity * 100)|round %}
+                                <div style="background: var(--border-light); border-radius: 10px; height: 6px; overflow: hidden; margin-top: 0.5rem; width: 150px;">
+                                    <div style="
+                                        background: {% if percentage >= 100 %}var(--error-color){% elif percentage >= 80 %}var(--warning-color){% else %}var(--success-color){% endif %};
+                                        width: {{ percentage }}%;
+                                        height: 100%;
+                                        border-radius: 10px;
+                                        transition: width 0.3s ease;
+                                    "></div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Registration Actions -->
+            <div class="ml-6 flex flex-col gap-3" style="min-width: 200px;">
+                {% if session.user_id == event.organizer_id %}
+                    <!-- Organizers see manage button instead of registration -->
+                {% elif is_registered %}
+                    <div class="card text-center" style="background: linear-gradient(135deg, rgba(104, 211, 145, 0.1), rgba(104, 211, 145, 0.05)); border: 1px solid var(--success-color);">
+                        <div style="font-size: 2rem; color: var(--success-color); margin-bottom: 0.5rem;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h4 class="font-semibold text-success mb-2">You're Registered!</h4>
+                        <p class="text-sm text-secondary mb-3">See you at the event</p>
+                        <form method="POST" action="{{ url_for('unregister_event', event_id=event.id) }}" style="margin: 0;">
+                            <button type="submit" class="btn btn-outline w-full" onclick="return confirm('Are you sure you want to unregister from this event?')">
+                                <i class="fas fa-calendar-minus"></i>
+                                Unregister
+                            </button>
+                        </form>
+                    </div>
+                {% elif registered_count >= event.capacity %}
+                    <div class="card text-center" style="background: linear-gradient(135deg, rgba(252, 129, 129, 0.1), rgba(252, 129, 129, 0.05)); border: 1px solid var(--error-color);">
+                        <div style="font-size: 2rem; color: var(--error-color); margin-bottom: 0.5rem;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h4 class="font-semibold text-error mb-2">Event Full</h4>
+                        <p class="text-sm text-secondary">This event has reached capacity</p>
+                    </div>
+                {% else %}
+                    <div class="card text-center" style="background: linear-gradient(135deg, rgba(107, 115, 255, 0.1), rgba(107, 115, 255, 0.05)); border: 1px solid var(--primary-color);">
+                        <div style="font-size: 2rem; color: var(--primary-color); margin-bottom: 0.5rem;">
+                            <i class="fas fa-calendar-plus"></i>
+                        </div>
+                        <h4 class="font-semibold text-primary mb-2">Join This Event</h4>
+                        <p class="text-sm text-secondary mb-3">{{ event.capacity - registered_count }} spots remaining</p>
+                        <form method="POST" action="{{ url_for('register_event', event_id=event.id) }}" style="margin: 0;">
+                            <button type="submit" class="btn btn-primary w-full">
+                                <i class="fas fa-calendar-plus"></i>
+                                Register Now
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+                
+                {% if session.user_id == event.organizer_id %}
+                <div class="card text-center" style="background: linear-gradient(135deg, rgba(255, 107, 157, 0.1), rgba(255, 107, 157, 0.05)); border: 1px solid var(--secondary-color);">
+                    <div style="font-size: 1.5rem; color: var(--secondary-color); margin-bottom: 0.5rem;">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h4 class="font-semibold text-secondary mb-2">Your Event</h4>
+                    <a href="{{ url_for('manage_event', event_id=event.id) }}" class="btn btn-secondary w-full">
+                        <i class="fas fa-cogs"></i>
+                        Manage Event
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendees List -->
+    {% if attendees %}
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-users"></i>
+                Attendees ({{ attendees|length }})
+            </h2>
+        </div>
+        
+        <div class="grid grid-cols-3 gap-3">
+            {% for attendee in attendees %}
+            <div class="card" style="background: rgba(107, 115, 255, 0.05); border: 1px solid rgba(107, 115, 255, 0.1);">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="user-avatar" style="width: 40px; height: 40px; font-size: 1rem;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h5 class="font-semibold text-primary">{{ attendee.name }}</h5>
+                            <p class="text-sm text-secondary">{{ attendee.role.title() }}</p>
+                        </div>
+                    </div>
+                    {% if (session.user_id == event.organizer_id or session.user_role == 'admin') and attendee.id != session.user_id %}
+                    <form method="POST" action="{{ url_for('remove_attendee', event_id=event.id, user_id=attendee.id) }}" 
+                          style="display: inline;"
+                          onsubmit="return confirm('Remove {{ attendee.name }} from this event?')">
+                        <button type="submit" class="btn btn-xs btn-outline-danger" title="Remove Attendee">
+                            <i class="fas fa-user-minus"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="card text-center">
+        <div style="font-size: 3rem; color: var(--text-light); margin-bottom: 1rem;">
+            <i class="fas fa-user-plus"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-secondary mb-2">Be the First to Join!</h3>
+        <p class="text-secondary">No one has registered for this event yet. Be the first to join this amazing experience!</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.btn-xs {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: var(--radius-sm);
+}
+
+.btn-outline-danger {
+    color: var(--error-color);
+    border: 1px solid var(--error-color);
+    background: transparent;
+    transition: all 0.2s ease;
+}
+
+.btn-outline-danger:hover {
+    background: var(--error-color);
+    color: white;
+}
+</style>
+{% endblock %}

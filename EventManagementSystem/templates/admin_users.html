@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Back Navigation -->
+    <div class="mb-4">
+        <a href="{{ url_for('admin_panel') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i>
+            Back to Admin Panel
+        </a>
+    </div>
+    
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-users-cog"></i>
+            User Management
+        </h1>
+        <p class="page-subtitle">
+            Manage user accounts and monitor platform activity. Keep the community safe and thriving.
+        </p>
+    </div>
+    
+    <!-- User Statistics -->
+    <div class="grid grid-cols-4 mb-4">
+        <div class="card text-center" style="background: linear-gradient(135deg, rgba(107, 115, 255, 0.1), rgba(107, 115, 255, 0.05)); border: 1px solid var(--primary-color);">
+            <div style="font-size: 2rem; color: var(--primary-color); margin-bottom: 0.5rem;">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3 class="text-xl font-bold text-primary">{{ users|length }}</h3>
+            <p class="text-secondary">Total Users</p>
+        </div>
+        
+        <div class="card text-center" style="background: linear-gradient(135deg, rgba(255, 107, 157, 0.1), rgba(255, 107, 157, 0.05)); border: 1px solid var(--secondary-color);">
+            <div style="font-size: 2rem; color: var(--secondary-color); margin-bottom: 0.5rem;">
+                <i class="fas fa-user"></i>
+            </div>
+            <h3 class="text-xl font-bold text-primary">
+                {{ users | selectattr('role', 'equalto', 'attendee') | list | length }}
+            </h3>
+            <p class="text-secondary">Attendees</p>
+        </div>
+        
+        <div class="card text-center" style="background: linear-gradient(135deg, rgba(104, 211, 145, 0.1), rgba(104, 211, 145, 0.05)); border: 1px solid var(--success-color);">
+            <div style="font-size: 2rem; color: var(--success-color); margin-bottom: 0.5rem;">
+                <i class="fas fa-users-cog"></i>
+            </div>
+            <h3 class="text-xl font-bold text-primary">
+                {{ users | selectattr('role', 'equalto', 'organizer') | list | length }}
+            </h3>
+            <p class="text-secondary">Organizers</p>
+        </div>
+        
+        <div class="card text-center" style="background: linear-gradient(135deg, rgba(246, 224, 94, 0.1), rgba(246, 224, 94, 0.05)); border: 1px solid var(--warning-color);">
+            <div style="font-size: 2rem; color: var(--warning-color); margin-bottom: 0.5rem;">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h3 class="text-xl font-bold text-primary">
+                {{ users | selectattr('role', 'equalto', 'admin') | list | length }}
+            </h3>
+            <p class="text-secondary">Admins</p>
+        </div>
+    </div>
+    
+    <!-- Users List -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-list"></i>
+                All Users
+            </h2>
+        </div>
+        
+        {% if users %}
+        <div class="grid grid-cols-1 gap-3">
+            {% for user in users %}
+            <div class="flex items-center justify-between p-4 rounded" 
+                 style="background: {% if user.role == 'admin' %}rgba(246, 224, 94, 0.1){% elif user.role == 'organizer' %}rgba(104, 211, 145, 0.1){% else %}rgba(107, 115, 255, 0.1){% endif %}; 
+                        border: 1px solid {% if user.role == 'admin' %}rgba(246, 224, 94, 0.2){% elif user.role == 'organizer' %}rgba(104, 211, 145, 0.2){% else %}rgba(107, 115, 255, 0.2){% endif %};">
+                
+                <div class="flex items-center gap-4">
+                    <div class="user-avatar" style="width: 50px; height: 50px; font-size: 1.2rem; 
+                                background: {% if user.role == 'admin' %}var(--warning-color){% elif user.role == 'organizer' %}var(--success-color){% else %}var(--primary-color){% endif %};">
+                        {% if user.role == 'admin' %}
+                            <i class="fas fa-shield-alt"></i>
+                        {% elif user.role == 'organizer' %}
+                            <i class="fas fa-users-cog"></i>
+                        {% else %}
+                            <i class="fas fa-user"></i>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-primary text-lg">{{ user.name }}</h4>
+                        <p class="text-secondary">{{ user.email }}</p>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="status-badge" 
+                                  style="background: {% if user.role == 'admin' %}rgba(246, 224, 94, 0.2){% elif user.role == 'organizer' %}rgba(104, 211, 145, 0.2){% else %}rgba(107, 115, 255, 0.2){% endif %}; 
+                                         color: {% if user.role == 'admin' %}var(--warning-color){% elif user.role == 'organizer' %}var(--success-color){% else %}var(--primary-color){% endif %};">
+                                {% if user.role == 'admin' %}
+                                    <i class="fas fa-shield-alt"></i>
+                                {% elif user.role == 'organizer' %}
+                                    <i class="fas fa-star"></i>
+                                {% else %}
+                                    <i class="fas fa-user"></i>
+                                {% endif %}
+                                {{ user.role.title() }}
+                            </span>
+                            
+                            {% if user.id == session.user_id %}
+                            <span class="status-badge" style="background: rgba(99, 179, 237, 0.2); color: var(--info-color);">
+                                <i class="fas fa-arrow-right"></i>
+                                You
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <!-- User Info -->
+                    <div class="text-right mr-4">
+                        <p class="text-sm text-secondary">User ID: {{ user.id }}</p>
+                        <p class="text-sm text-secondary">Joined: Recent</p>
+                    </div>
+                    
+                    <!-- Actions -->
+                    {% if user.id != session.user_id %}
+                    <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}" style="margin: 0;" onsubmit="return confirm('Are you sure you want to delete {{ user.name }}? This action cannot be undone.')">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash"></i>
+                            Delete
+                        </button>
+                    </form>
+                    {% else %}
+                    <button class="btn btn-outline btn-sm" disabled style="opacity: 0.5;">
+                        <i class="fas fa-shield"></i>
+                        Protected
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center p-4">
+            <div style="font-size: 3rem; color: var(--text-light); margin-bottom: 1rem;">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-secondary mb-2">No Users Found</h3>
+            <p class="text-secondary">There are no users in the system.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Safety Notice -->
+    <div class="card mt-4" style="background: linear-gradient(135deg, rgba(252, 129, 129, 0.1), rgba(252, 129, 129, 0.05)); border: 1px solid var(--error-color);">
+        <div class="card-header">
+            <h3 class="card-title" style="color: var(--error-color);">
+                <i class="fas fa-exclamation-triangle"></i>
+                Important Safety Notice
+            </h3>
+        </div>
+        
+        <div class="flex flex-col gap-2">
+            <p class="text-secondary">
+                <i class="fas fa-shield-alt" style="color: var(--error-color);"></i>
+                <strong>Be careful when deleting users.</strong> This action permanently removes all user data including their events and registrations.
+            </p>
+            
+            <p class="text-secondary">
+                <i class="fas fa-lock" style="color: var(--error-color);"></i>
+                <strong>Your own account is protected</strong> and cannot be deleted through this interface.
+            </p>
+            
+            <p class="text-secondary">
+                <i class="fas fa-users" style="color: var(--error-color);"></i>
+                <strong>Consider the impact</strong> on ongoing events before removing organizers or active attendees.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

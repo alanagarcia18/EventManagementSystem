@@ -1,0 +1,233 @@
+<!--
+Create Event Page - Event Management System
+Comprehensive event creation form with venue selection, scheduling, and capacity management.
+
+PAGE CONNECTIONS:
+- FROM: Organizer Panel (main CTA), Dashboard (quick link), Navigation (Create Event)
+- TO: Organizer Panel (after creation), Event detail page (view created event), Dashboard (cancel/back)
+
+FUNCTIONALITY:
+- Multi-field event creation form with validation
+- Venue selection from admin-managed venues
+- Date/time scheduling with datetime pickers
+- Capacity management with automatic limits
+- Real-time form validation and user feedback
+- AI assistant integration for planning help
+- Responsive design for all devices
+
+USER ROLES: Available to all authenticated users (creates events with user as organizer)
+DEPENDENCIES: Requires venues to be created by admin, uses datetime validation
+-->
+{% extends "base.html" %}
+
+{% block title %}Create Event - Event Manager{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Back Navigation -->
+    <div class="mb-4">
+        <a href="{{ url_for('organizer_panel') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i>
+            Back to Organizer Panel
+        </a>
+    </div>
+    
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-plus-circle"></i>
+            Create New Event
+        </h1>
+        <p class="page-subtitle">
+            Share your passion and bring people together. Create an unforgettable experience!
+        </p>
+    </div>
+    
+    <div class="card" style="max-width: 800px; margin: 0 auto;">
+        <form method="POST" action="{{ url_for('create_event') }}">
+            <div class="grid grid-cols-1 gap-4">
+                <!-- Event Title -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-star"></i>
+                        Event Title *
+                    </label>
+                    <input type="text" name="title" class="form-input" placeholder="Enter an exciting event title" required>
+                    <p class="text-sm text-secondary mt-1">Make it catchy and descriptive!</p>
+                </div>
+                
+                <!-- Event Description -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-align-left"></i>
+                        Description
+                    </label>
+                    <textarea name="description" class="form-input form-textarea" placeholder="Describe what makes this event special..."></textarea>
+                    <p class="text-sm text-secondary mt-1">Tell people what to expect and why they should join.</p>
+                </div>
+                
+                <!-- Venue Selection -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Venue *
+                    </label>
+                    <select name="venue_id" class="form-select" required>
+                        <option value="">Select a venue...</option>
+                        {% for venue in venues %}
+                        <option value="{{ venue.id }}">
+                            {{ venue.name }} - {{ venue.address }} (Capacity: {{ venue.capacity }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Event Capacity -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-users"></i>
+                        Event Capacity *
+                    </label>
+                    <input type="number" name="capacity" class="form-input" placeholder="Maximum number of attendees" min="1" max="1000" required>
+                    <p class="text-sm text-secondary mt-1">How many people can attend this event?</p>
+                </div>
+                
+                <!-- Date and Time -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-calendar"></i>
+                            Start Date *
+                        </label>
+                        <input type="date" name="start_date" class="form-input" required min="{{ today }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-clock"></i>
+                            Start Time *
+                        </label>
+                        <input type="time" name="start_time" class="form-input" required>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-calendar"></i>
+                            End Date
+                        </label>
+                        <input type="date" name="end_date" class="form-input" min="{{ today }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-clock"></i>
+                            End Time
+                        </label>
+                        <input type="time" name="end_time" class="form-input">
+                    </div>
+                </div>
+                
+                <p class="text-sm text-secondary">
+                    <i class="fas fa-info-circle"></i>
+                    End date and time are optional. Leave blank if your event doesn't have a specific end time.
+                </p>
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-3 mt-4">
+                    <button type="submit" class="btn btn-primary flex-1">
+                        <i class="fas fa-plus-circle"></i>
+                        Create Event
+                    </button>
+                    
+                    <a href="{{ url_for('organizer_panel') }}" class="btn btn-outline">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Tips Card -->
+    <div class="card mt-4" style="background: linear-gradient(135deg, rgba(104, 211, 145, 0.1), rgba(104, 211, 145, 0.05)); border: 1px solid var(--success-color); max-width: 800px; margin: 2rem auto 0;">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-lightbulb"></i>
+                Tips for Creating Great Events
+            </h3>
+        </div>
+        
+        <div class="grid grid-cols-1 gap-3">
+            <div class="flex items-start gap-3">
+                <div style="font-size: 1.2rem; color: var(--success-color); margin-top: 0.2rem;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-primary">Clear and Engaging Title</h4>
+                    <p class="text-sm text-secondary">Use action words and make it clear what the event is about.</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start gap-3">
+                <div style="font-size: 1.2rem; color: var(--success-color); margin-top: 0.2rem;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-primary">Detailed Description</h4>
+                    <p class="text-sm text-secondary">Explain what attendees will gain from your event.</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start gap-3">
+                <div style="font-size: 1.2rem; color: var(--success-color); margin-top: 0.2rem;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-primary">Right Capacity</h4>
+                    <p class="text-sm text-secondary">Consider the venue size and interaction level you want.</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start gap-3">
+                <div style="font-size: 1.2rem; color: var(--success-color); margin-top: 0.2rem;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-primary">Perfect Timing</h4>
+                    <p class="text-sm text-secondary">Choose dates and times when your target audience is available.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-fill end date when start date is selected
+document.querySelector('input[name="start_date"]').addEventListener('change', function() {
+    const endDateField = document.querySelector('input[name="end_date"]');
+    if (!endDateField.value) {
+        endDateField.value = this.value;
+    }
+    endDateField.min = this.value;
+});
+
+// Auto-fill end time when start time is selected
+document.querySelector('input[name="start_time"]').addEventListener('change', function() {
+    const endTimeField = document.querySelector('input[name="end_time"]');
+    if (!endTimeField.value && this.value) {
+        // Add 2 hours to start time as default end time
+        const [hours, minutes] = this.value.split(':');
+        const endHour = (parseInt(hours) + 2) % 24;
+        endTimeField.value = `${endHour.toString().padStart(2, '0')}:${minutes}`;
+    }
+});
+
+// Set today as minimum date
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.querySelector('input[name="start_date"]').min = today;
+    document.querySelector('input[name="end_date"]').min = today;
+});
+</script>
+{% endblock %}
