@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Event Manager</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Custom CSS (Same as landing page) -->
+    <style>
+        :root {
+            /* Light Mode Colors */
+            --primary-color: #6B73FF;
+            --primary-light: #9BB5FF;
+            --secondary-color: #FF6B9D;
+            --secondary-light: #FFB3D1;
+            --accent-color: #68D391;
+            --warning-color: #F6E05E;
+            --bg-primary: #F7FAFC;
+            --bg-secondary: #EDF2F7;
+            --bg-card: #FFFFFF;
+            --text-primary: #2D3748;
+            --text-secondary: #718096;
+            --text-light: #A0AEC0;
+            --border-color: #E2E8F0;
+            --shadow: 0 10px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        [data-theme="dark"] {
+            /* Dark Mode Colors */
+            --primary-color: #8B7CF6;
+            --primary-light: #C4B5FD;
+            --secondary-color: #F472B6;
+            --secondary-light: #FBCFE8;
+            --accent-color: #34D399;
+            --warning-color: #FBBF24;
+            --bg-primary: #1A202C;
+            --bg-secondary: #2D3748;
+            --bg-card: #2D3748;
+            --text-primary: #F7FAFC;
+            --text-secondary: #CBD5E0;
+            --text-light: #718096;
+            --border-color: #4A5568;
+            --shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+        }
+        
+        /* Navigation (same as landing) */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            padding: 1rem 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        [data-theme="dark"] .navbar {
+            background: rgba(45, 55, 72, 0.95);
+        }
+        
+        .nav-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .nav-brand i {
+            font-size: 2.2rem;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-color);
+            background: var(--bg-secondary);
+        }
+        
+        .theme-toggle {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+        }
+        
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow);
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding-top: 100px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .page-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+        
+        .page-subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .section-text {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .feature-item {
+            background: linear-gradient(135deg, rgba(107, 115, 255, 0.1), rgba(255, 107, 157, 0.05));
+            border: 1px solid var(--primary-color);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-item:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .feature-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .page-title {
+                font-size: 2.5rem;
+            }
+            
+            .card {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <i class="fas fa-calendar-heart"></i>
+                <span>Event Manager</span>
+            </a>
+            
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/about" class="nav-link active">About</a>
+                <a href="/creator" class="nav-link">Creator</a>
+                <a href="/login-page" class="nav-link">Sign In</a>
+                <a href="/register" class="nav-link">Register</a>
+            </div>
+            
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <i class="fas fa-moon" id="theme-icon"></i>
+            </button>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-heart"></i>
+                    About Event Manager
+                </h1>
+                <p class="page-subtitle">
+                    Discover how we're making event management delightful, intuitive, and absolutely adorable! 💕
+                </p>
+            </div>
+            
+            <!-- Mission Card -->
+            <div class="card">
+                <h2 class="section-title">
+                    <i class="fas fa-bullseye"></i>
+                    Our Mission
+                </h2>
+                <p class="section-text">
+                    Our mission is to create a streamlined and user-friendly event management platform powered by a robust database system that efficiently organizes events, participants, venues, and schedules. The platform will enable users to easily browse and register for events, empower organizers to create and manage event details and participant lists, and provide administrators with comprehensive tools to oversee users, events, and venues. Ensuring a seamless, well-coordinated event experience for all.
+                </p>
+            </div>
+            
+            <!-- How It Works -->
+            <div class="card">
+                <h2 class="section-title">
+                    <i class="fas fa-cogs"></i>
+                    How It Works
+                </h2>
+                <p class="section-text">
+                    Our platform is designed with simplicity and beauty in mind. Here's how the magic happens:
+                </p>
+                
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <h3 class="feature-title">1. Join the Community</h3>
+                        <p class="feature-description">Create your account and become part of our growing family of event lovers!</p>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h3 class="feature-title">2. Discover Events</h3>
+                        <p class="feature-description">Browse amazing events in your area or create your own to share your passion.</p>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <h3 class="feature-title">3. Connect & Attend</h3>
+                        <p class="feature-description">Register for events, meet wonderful people, and create lasting memories together.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Features Card -->
+            <div class="card">
+                <h2 class="section-title">
+                    <i class="fas fa-sparkles"></i>
+                    Cool Features
+                </h2>
+                <p class="section-text">
+                    We've packed our platform with delightful features that make event management a breeze:
+                </p>
+                
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <h3 class="feature-title">AI Assistant 🤖</h3>
+                        <p class="feature-description">Get instant help and tips from our friendly AI assistant that understands event management!</p>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-palette"></i>
+                        </div>
+                        <h3 class="feature-title">Dark & Light Modes 🌙</h3>
+                        <p class="feature-description">Switch between beautiful themes that adapt to your mood and time of day!</p>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h3 class="feature-title">Mobile Friendly 📱</h3>
+                        <p class="feature-description">Manage events on the go with our responsive design that works beautifully everywhere!</p>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3 class="feature-title">Secure & Reliable 🛡️</h3>
+                        <p class="feature-description">Your data is safe with role-based access and secure session management!</p>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="feature-title">Smart Analytics 📊</h3>
+                        <p class="feature-description">Track attendance, manage capacity, and get insights to make your events even better!</p>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <h3 class="feature-title">Made with Love 💕</h3>
+                        <p class="feature-description">Every pixel is crafted with care to create the most delightful event management experience!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Current Stats -->
+            <div class="card">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Platform Statistics
+                </h2>
+                <p class="section-text">
+                    Here's a glimpse of our growing community and the amazing things happening on our platform:
+                </p>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-number">{{ stats.total_users }}</span>
+                        <span class="stat-label">Amazing Users</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">{{ stats.total_events }}</span>
+                        <span class="stat-label">Events Created</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">{{ stats.total_venues }}</span>
+                        <span class="stat-label">Venues Available</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">{{ stats.total_registrations }}</span>
+                        <span class="stat-label">Happy Attendees</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Technology -->
+            <div class="card">
+                <h2 class="section-title">
+                    <i class="fas fa-code"></i>
+                    Built with Modern Technology
+                </h2>
+                <p class="section-text">
+                    Our platform is built using cutting-edge technologies to ensure reliability, security, and an amazing user experience:
+                </p>
+                <ul style="color: var(--text-secondary); line-height: 2; margin-left: 2rem;">
+                    <li><strong>Flask</strong> - Lightweight and powerful Python web framework</li>
+                    <li><strong>SQLite</strong> - Reliable database for storing all your event data</li>
+                    <li><strong>HTML5 & CSS3</strong> - Modern web standards with beautiful animations</li>
+                    <li><strong>JavaScript</strong> - Interactive features and AI assistant integration</li>
+                    <li><strong>Responsive Design</strong> - Works perfectly on all devices</li>
+                    <li><strong>Dark/Light Mode</strong> - Adaptive themes for comfortable viewing</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Theme Toggle (same as landing page)
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            const currentTheme = html.getAttribute('data-theme');
+            
+            if (currentTheme === 'dark') {
+                html.setAttribute('data-theme', 'light');
+                themeIcon.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                themeIcon.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+        
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            
+            html.setAttribute('data-theme', savedTheme);
+            themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        });
+    </script>
+</body>
+</html>

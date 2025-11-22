@@ -1,0 +1,269 @@
+<!--
+Dashboard - Event Management System
+Main user hub displaying personalized event information, quick actions, and system overview.
+
+PAGE CONNECTIONS:
+- FROM: Login page (after authentication), All pages (navigation home)
+- TO: Events page (browse), My Registrations (personal events), Create Event (quick action), Organizer Panel (management)
+
+FUNCTIONALITY:
+- Personalized welcome with role-specific content
+- Recent events preview with registration status
+- Quick action buttons for common tasks
+- Statistics overview for user activities
+- Role-based content display (admin/organizer/attendee)
+- Responsive cards with hover effects
+- Real-time data from database
+
+USER ROLES: Available to all authenticated users (content varies by role)
+INTEGRATIONS: Connected to all major platform features via navigation and quick actions
+-->
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Event Manager{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-sparkles"></i>
+            Hello, {{ session.user_name }}!
+        </h1>
+        <p class="page-subtitle">
+            Welcome to your personalized event dashboard. Discover amazing events and connect with your community.
+        </p>
+    </div>
+    
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-3 mb-4">
+        <div class="card text-center">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">
+                <i class="fas fa-calendar-days" style="color: var(--primary-color);"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-primary">{{ events|length }}</h3>
+            <p class="text-secondary">Upcoming Events</p>
+        </div>
+        
+        <div class="card text-center">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">
+                <i class="fas fa-ticket" style="color: var(--secondary-color);"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-primary">{{ user_registrations|length }}</h3>
+            <p class="text-secondary">My Registrations</p>
+        </div>
+        
+        {% if session.user_role == 'organizer' %}
+        <div class="card text-center">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">
+                <i class="fas fa-users-cog" style="color: var(--success-color);"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-primary">{{ organized_events|length }}</h3>
+            <p class="text-secondary">Events Organized</p>
+        </div>
+        {% else %}
+        <div class="card text-center">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">
+                <i class="fas fa-heart" style="color: var(--error-color);"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-primary">Welcome!</h3>
+            <p class="text-secondary">Enjoy Events</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-3 mb-4">
+        <a href="{{ url_for('events') }}" class="card flex items-center gap-3" style="text-decoration: none; transition: var(--transition);">
+            <div style="font-size: 2rem; color: var(--primary-color);">
+                <i class="fas fa-search"></i>
+            </div>
+            <div>
+                <h4 class="font-semibold text-primary">Browse Events</h4>
+                <p class="text-secondary text-sm">Discover new experiences</p>
+            </div>
+        </a>
+        
+        <a href="{{ url_for('my_registrations') }}" class="card flex items-center gap-3" style="text-decoration: none; transition: var(--transition);">
+            <div style="font-size: 2rem; color: var(--secondary-color);">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div>
+                <h4 class="font-semibold text-primary">My Events</h4>
+                <p class="text-secondary text-sm">View your registrations</p>
+            </div>
+        </a>
+        
+        {% if session.user_role == 'organizer' %}
+        <a href="{{ url_for('create_event') }}" class="card flex items-center gap-3" style="text-decoration: none; transition: var(--transition);">
+            <div style="font-size: 2rem; color: var(--success-color);">
+                <i class="fas fa-plus-circle"></i>
+            </div>
+            <div>
+                <h4 class="font-semibold text-primary">Create Event</h4>
+                <p class="text-secondary text-sm">Organize something amazing</p>
+            </div>
+        </a>
+        {% elif session.user_role == 'admin' %}
+        <a href="{{ url_for('admin_panel') }}" class="card flex items-center gap-3" style="text-decoration: none; transition: var(--transition);">
+            <div style="font-size: 2rem; color: var(--warning-color);">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <div>
+                <h4 class="font-semibold text-primary">Admin Panel</h4>
+                <p class="text-secondary text-sm">System management</p>
+            </div>
+        </a>
+        {% else %}
+        <div class="card flex items-center gap-3" style="opacity: 0.7;">
+            <div style="font-size: 2rem; color: var(--text-light);">
+                <i class="fas fa-star"></i>
+            </div>
+            <div>
+                <h4 class="font-semibold text-secondary">Explore More</h4>
+                <p class="text-secondary text-sm">Join events you love</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Recent Events -->
+    {% if events %}
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-fire"></i>
+                Trending Events
+            </h2>
+            <a href="{{ url_for('events') }}" class="btn btn-outline btn-sm">
+                View All
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3">
+            {% for event in events[:4] %}
+            <div class="card" style="background: linear-gradient(135deg, rgba(107, 115, 255, 0.05), rgba(255, 107, 157, 0.05)); border: 1px solid rgba(107, 115, 255, 0.1);">
+                <div class="flex justify-between items-start mb-2">
+                    <h4 class="font-semibold text-primary">{{ event.title }}</h4>
+                    {% if event.capacity %}
+                        <span class="status-badge status-available">
+                            <i class="fas fa-users"></i>
+                            {{ event.capacity }} spots
+                        </span>
+                    {% endif %}
+                </div>
+                
+                {% if event.description %}
+                <p class="text-secondary text-sm mb-3">{{ event.description[:100] }}{% if event.description|length > 100 %}...{% endif %}</p>
+                {% endif %}
+                
+                <div class="flex justify-between items-center">
+                    {% if event.start %}
+                    <div class="text-sm text-secondary">
+                        <i class="fas fa-clock"></i>
+                        {{ event.start }}
+                    </div>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-eye"></i>
+                        View
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- My Recent Registrations -->
+    {% if user_registrations %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-bookmark"></i>
+                My Recent Events
+            </h2>
+            <a href="{{ url_for('my_registrations') }}" class="btn btn-outline btn-sm">
+                View All
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <div class="grid grid-cols-1 gap-3">
+            {% for reg in user_registrations[:3] %}
+            <div class="flex items-center justify-between p-3 rounded" style="background: rgba(104, 211, 145, 0.1); border: 1px solid rgba(104, 211, 145, 0.2);">
+                <div class="flex items-center gap-3">
+                    <div style="font-size: 1.5rem; color: var(--success-color);">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-primary">{{ reg.event_title }}</h5>
+                        {% if reg.start %}
+                        <p class="text-sm text-secondary">
+                            <i class="fas fa-clock"></i>
+                            {{ reg.start }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <a href="{{ url_for('event_detail', event_id=reg.event_id) }}" class="btn btn-success btn-sm">
+                    <i class="fas fa-external-link-alt"></i>
+                    Details
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if session.user_role == 'organizer' and organized_events %}
+    <!-- My Events (Organizer) -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-crown"></i>
+                My Events
+            </h2>
+            <a href="{{ url_for('organizer_panel') }}" class="btn btn-outline btn-sm">
+                Manage All
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <div class="grid grid-cols-1 gap-3">
+            {% for event in organized_events[:3] %}
+            <div class="flex items-center justify-between p-3 rounded" style="background: rgba(255, 107, 157, 0.1); border: 1px solid rgba(255, 107, 157, 0.2);">
+                <div class="flex items-center gap-3">
+                    <div style="font-size: 1.5rem; color: var(--secondary-color);">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-primary">{{ event.title }}</h5>
+                        {% if event.start %}
+                        <p class="text-sm text-secondary">
+                            <i class="fas fa-clock"></i>
+                            {{ event.start }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <span class="status-badge status-upcoming text-sm">
+                        <i class="fas fa-users"></i>
+                        {{ event.registered_count if event.registered_count else 0 }}/{{ event.capacity }}
+                    </span>
+                    <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-cog"></i>
+                        Manage
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

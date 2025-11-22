@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creator - Event Manager</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Custom CSS (Same base as other pages) -->
+    <style>
+        :root {
+            /* Light Mode Colors */
+            --primary-color: #6B73FF;
+            --primary-light: #9BB5FF;
+            --secondary-color: #FF6B9D;
+            --secondary-light: #FFB3D1;
+            --accent-color: #68D391;
+            --warning-color: #F6E05E;
+            --bg-primary: #F7FAFC;
+            --bg-secondary: #EDF2F7;
+            --bg-card: #FFFFFF;
+            --text-primary: #2D3748;
+            --text-secondary: #718096;
+            --text-light: #A0AEC0;
+            --border-color: #E2E8F0;
+            --shadow: 0 10px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        [data-theme="dark"] {
+            /* Dark Mode Colors */
+            --primary-color: #8B7CF6;
+            --primary-light: #C4B5FD;
+            --secondary-color: #F472B6;
+            --secondary-light: #FBCFE8;
+            --accent-color: #34D399;
+            --warning-color: #FBBF24;
+            --bg-primary: #1A202C;
+            --bg-secondary: #2D3748;
+            --bg-card: #2D3748;
+            --text-primary: #F7FAFC;
+            --text-secondary: #CBD5E0;
+            --text-light: #718096;
+            --border-color: #4A5568;
+            --shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+        }
+        
+        /* Navigation (same as other pages) */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            padding: 1rem 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        [data-theme="dark"] .navbar {
+            background: rgba(45, 55, 72, 0.95);
+        }
+        
+        .nav-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .nav-brand i {
+            font-size: 2.2rem;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-color);
+            background: var(--bg-secondary);
+        }
+        
+        .theme-toggle {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+        }
+        
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow);
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding-top: 100px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .page-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+        
+        .page-subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Profile Card */
+        .profile-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 25px;
+            padding: 3rem;
+            color: white;
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .profile-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="rgba(255,255,255,0.1)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient></defs><circle cx="20" cy="20" r="2" fill="url(%23g)"/><circle cx="80" cy="40" r="1.5" fill="url(%23g)"/></svg>') repeat;
+            animation: float 20s infinite linear;
+            opacity: 0.3;
+        }
+        
+        @keyframes float {
+            0% { transform: translate(-25%, -25%) rotate(0deg); }
+            100% { transform: translate(-25%, -25%) rotate(360deg); }
+        }
+        
+        .profile-avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            margin: 0 auto 2rem;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .profile-name {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .profile-title {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .profile-bio {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .section-text {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+        
+        .skill-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .skill-item {
+            background: linear-gradient(135deg, rgba(107, 115, 255, 0.1), rgba(255, 107, 157, 0.1));
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .skill-item:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow);
+        }
+        
+        .skill-icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .skill-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .skill-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .contact-item {
+            background: var(--bg-secondary);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: var(--text-primary);
+            border: 2px solid transparent;
+        }
+        
+        .contact-item:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .contact-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+        
+        .contact-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .contact-value {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .page-title {
+                font-size: 2.5rem;
+            }
+            
+            .profile-card {
+                padding: 2rem 1rem;
+            }
+            
+            .profile-name {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <i class="fas fa-calendar-heart"></i>
+                <span>Event Manager</span>
+            </a>
+            
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/about" class="nav-link">About</a>
+                <a href="/creator" class="nav-link active">Creator</a>
+                <a href="/login-page" class="nav-link">Sign In</a>
+                <a href="/register" class="nav-link">Register</a>
+            </div>
+            
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <i class="fas fa-moon" id="theme-icon"></i>
+            </button>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-user-astronaut"></i>
+                    Meet the Creator
+                </h1>
+                <p class="page-subtitle">
+                    The person behind the magic ✨ Learn about the passionate developer who created this delightful platform!
+                </p>
+            </div>
+            
+            <!-- Profile Card -->
+            <div class="profile-card">
+                <div class="profile-avatar">
+                    <i class="fas fa-code"></i>
+                </div>
+                <h2 class="profile-name">Jahzara Broaster & Alana Garcia</h2>
+                <p class="profile-title">Full-Stack Developers & Event Enthusiasts</p>
+                <p class="profile-bio">
+                    Hi there! We are Jahzara Broaster and Alana Garcia, passionate developers who loves creating beautiful, functional applications that bring people together. 
+                    I believe technology should be delightful, intuitive, and make people's lives better. When I'm not coding, you can find me 
+                    attending tech meetups, organizing community events, or exploring new ways to make software more human-centered! 🌟
+                </p>
+            </div>
+            
+            <!-- Skills & Technologies -->
+            <div class="card">
+                <h2 class="section-title">
+                    <i class="fas fa-tools"></i>
+                    Skills & Technologies
+                </h2>
+                <p class="section-text">
+                    Here are the technologies and skills I used to bring Event Manager to life:
+                </p>
+                
+                <div class="skill-grid">
+                    <div class="skill-item">
+                        <div class="skill-icon">
+                            <i class="fab fa-python"></i>
+                        </div>
+                        <div class="skill-name">Python & Flask</div>
+                        <div class="skill-description">Backend development with clean, maintainable code</div>
+                    </div>
+                    
+                    <div class="skill-item">
+                        <div class="skill-icon">
+                            <i class="fab fa-html5"></i>
+                        </div>
+                        <div class="skill-name">HTML5 & CSS3</div>
+                        <div class="skill-description">Modern web standards with beautiful styling</div>
+                    </div>
+                    
+                    <div class="skill-item">
+                        <div class="skill-icon">
+                            <i class="fab fa-js"></i>
+                        </div>
+                        <div class="skill-name">JavaScript</div>
+                        <div class="skill-description">Interactive features and smooth user experiences</div>
+                    </div>
+                    
+                    <div class="skill-item">
+                        <div class="skill-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="skill-name">SQLite</div>
+                        <div class="skill-description">Efficient database design and management</div>
+                    </div>
+                    
+                    <div class="skill-item">
+                        <div class="skill-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="skill-name">Responsive Design</div>
+                        <div class="skill-description">Beautiful interfaces that work everywhere</div>
+                    </div>
+                    
+                    <div class="skill-item">
+                        <div class="skill-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="skill-name">AI Integration</div>
+                        <div class="skill-description">Smart assistant features for enhanced UX</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Philosophy -->
+            <div class="card">
+                <h2 class="section-title">
+                    <i class="fas fa-lightbulb"></i>
+                    Design Philosophy
+                </h2>
+                <p class="section-text">
+                    My approach to creating Event Manager was guided by these core principles:
+                </p>
+                
+                <div class="skill-grid">
+                    <div class="skill-item">
+                        <div class="skill-icon">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <div class="skill-name">User-Centered Design</div>
+                        <div class="skill-description">Every decision prioritizes user happiness and ease of use</div>
+                    </div>
+                    
+                    <div class="skill-item">
+                        <div class="skill-icon">
+                            <i class="fas fa-palette"></i>
+                        </div>
+                        <div class="skill-name">Aesthetic Delight</div>
+                        <div class="skill-description">Beautiful interfaces that spark joy and inspire creativity</div>
+                    </div>
+                    
+                    <div class="skill-item">
+                        <div class="skill-icon">
+                            <i class="fas fa-leaf"></i>
+                        </div>
+                        <div class="skill-name">Simplicity First</div>
+                        <div class="skill-description">Complex problems solved with elegant, simple solutions</div>
+                    </div>
+                    
+                    <div class="skill-item">
+                        <div class="skill-icon">
+                            <i class="fas fa-universal-access"></i>
+                        </div>
+                        <div class="skill-name">Accessibility</div>
+                        <div class="skill-description">Technology that everyone can use and enjoy</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact -->
+            <div class="card">
+                <h2 class="section-title">
+                    <i class="fas fa-paper-plane"></i>
+                    Let's Connect!
+                </h2>
+                <p class="section-text">
+                    I'd love to hear from you! Whether you have feedback, questions, or just want to say hi, don't hesitate to reach out:
+                </p>
+                
+                <div class="contact-grid">
+                    <a href="mailto:jbroaster@murraystate.edu" class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="contact-label">Email - Jahzara</div>
+                        <div class="contact-value">jbroaster@murraystate.edu</div>
+                    </a>
+                    
+                    <a href="mailto:agarcia@murraystate.edu" class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="contact-label">Email - Alana</div>
+                        <div class="contact-value">agarcia@murraystate.edu</div>
+                    </a>
+                    
+                    <a href="https://github.com/JahzB" class="contact-item" target="_blank">
+                        <div class="contact-icon">
+                            <i class="fab fa-github"></i>
+                        </div>
+                        <div class="contact-label">GitHub - Jahzara</div>
+                        <div class="contact-value">JahzB</div>
+                    </a>
+                    
+                    <a href="https://github.com/alanagarcia18" class="contact-item" target="_blank">
+                        <div class="contact-icon">
+                            <i class="fab fa-github"></i>
+                        </div>
+                        <div class="contact-label">GitHub - Alana</div>
+                        <div class="contact-value">alanagarcia18</div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Thank You -->
+            <div class="card" style="background: linear-gradient(135deg, rgba(104, 211, 145, 0.1), rgba(107, 115, 255, 0.05)); border: 1px solid var(--accent-color);">
+                <h2 class="section-title">
+                    <i class="fas fa-star"></i>
+                    Thank You! 
+                </h2>
+                <p class="section-text" style="text-align: center; font-size: 1.2rem;">
+                    Thank you for using Event Manager and being part of our amazing community! Your support and feedback help make this platform better every day. 
+                    Together, let's create more meaningful connections and unforgettable experiences! 🎉💕
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            const currentTheme = html.getAttribute('data-theme');
+            
+            if (currentTheme === 'dark') {
+                html.setAttribute('data-theme', 'light');
+                themeIcon.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                themeIcon.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+        
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            
+            html.setAttribute('data-theme', savedTheme);
+            themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        });
+    </script>
+</body>
+</html>

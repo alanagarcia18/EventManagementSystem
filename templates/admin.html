@@ -1,0 +1,251 @@
+<!--
+Admin Panel - Event Management System
+System administration dashboard with platform statistics, user management, and venue control.
+
+PAGE CONNECTIONS:
+- FROM: Navigation (admin role only), Dashboard (admin quick access)
+- TO: User Management (admin_users.html), Venue Management (admin_venues.html), System analytics
+
+FUNCTIONALITY:
+- Platform-wide statistics and metrics
+- User management interface access
+- Venue creation and management tools
+- System health monitoring
+- Administrative reporting
+- AI assistant for administrative guidance
+- Role-restricted access control
+
+USER ROLES: Admin only - highest privilege level
+SECURITY: Role-based access with @role_required('admin') decorator
+DEPENDENCIES: Database statistics methods, user management functions
+-->
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - Event Manager{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-shield-alt"></i>
+            Administration Panel
+        </h1>
+        <p class="page-subtitle">
+            Manage users, venues, and monitor system health. Keep the community thriving!
+        </p>
+    </div>
+    
+    <!-- System Statistics -->
+    <div class="grid grid-cols-4 mb-4">
+        <div class="card text-center" style="background: linear-gradient(135deg, rgba(107, 115, 255, 0.1), rgba(107, 115, 255, 0.05)); border: 1px solid var(--primary-color);">
+            <div style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 0.5rem;">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-primary">{{ stats.total_users }}</h3>
+            <p class="text-secondary">Total Users</p>
+        </div>
+        
+        <div class="card text-center" style="background: linear-gradient(135deg, rgba(255, 107, 157, 0.1), rgba(255, 107, 157, 0.05)); border: 1px solid var(--secondary-color);">
+            <div style="font-size: 2.5rem; color: var(--secondary-color); margin-bottom: 0.5rem;">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-primary">{{ stats.total_events }}</h3>
+            <p class="text-secondary">Total Events</p>
+        </div>
+        
+        <div class="card text-center" style="background: linear-gradient(135deg, rgba(104, 211, 145, 0.1), rgba(104, 211, 145, 0.05)); border: 1px solid var(--success-color);">
+            <div style="font-size: 2.5rem; color: var(--success-color); margin-bottom: 0.5rem;">
+                <i class="fas fa-ticket"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-primary">{{ stats.total_registrations }}</h3>
+            <p class="text-secondary">Registrations</p>
+        </div>
+        
+        <div class="card text-center" style="background: linear-gradient(135deg, rgba(246, 224, 94, 0.1), rgba(246, 224, 94, 0.05)); border: 1px solid var(--warning-color);">
+            <div style="font-size: 2.5rem; color: var(--warning-color); margin-bottom: 0.5rem;">
+                <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-primary">{{ stats.total_venues }}</h3>
+            <p class="text-secondary">Venues</p>
+        </div>
+    </div>
+    
+    <!-- Quick Actions - Positioned after System Statistics -->
+    <div class="grid grid-cols-3 gap-4 mb-4">
+        <a href="{{ url_for('admin_events') }}" class="card text-center" style="text-decoration: none; background: linear-gradient(135deg, rgba(107, 115, 255, 0.1), rgba(107, 115, 255, 0.05)); border: 1px solid var(--primary-color); transition: transform 0.2s; padding: 1.5rem;">
+            <div style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 1rem;">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <h4 class="font-semibold text-primary">Manage Events</h4>
+            <p class="text-sm text-secondary">Manage all events in the system</p>
+        </a>
+        
+        <a href="{{ url_for('admin_users') }}" class="card text-center" style="text-decoration: none; background: linear-gradient(135deg, rgba(255, 107, 157, 0.1), rgba(255, 107, 157, 0.05)); border: 1px solid var(--secondary-color); transition: transform 0.2s; padding: 1.5rem;">
+            <div style="font-size: 2.5rem; color: var(--secondary-color); margin-bottom: 1rem;">
+                <i class="fas fa-users"></i>
+            </div>
+            <h4 class="font-semibold" style="color: var(--secondary-color);">Manage Users</h4>
+            <p class="text-sm text-secondary">User accounts and roles</p>
+        </a>
+        
+        <a href="{{ url_for('admin_venues') }}" class="card text-center" style="text-decoration: none; background: linear-gradient(135deg, rgba(104, 211, 145, 0.1), rgba(104, 211, 145, 0.05)); border: 1px solid var(--success-color); transition: transform 0.2s; padding: 1.5rem;">
+            <div style="font-size: 2.5rem; color: var(--success-color); margin-bottom: 1rem;">
+                <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <h4 class="font-semibold text-success">Manage Venues</h4>
+            <p class="text-sm text-secondary">Venue locations and capacity</p>
+        </a>
+    </div>
+    
+    <!-- User Role Distribution -->
+    <div class="grid grid-cols-2 gap-4">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-chart-pie"></i>
+                    User Distribution
+                </h2>
+            </div>
+            
+            <div class="flex flex-col gap-3">
+                <div class="flex items-center justify-between p-3 rounded" style="background: rgba(107, 115, 255, 0.1); border: 1px solid rgba(107, 115, 255, 0.2);">
+                    <div class="flex items-center gap-3">
+                        <div style="font-size: 1.5rem; color: var(--primary-color);">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-primary">Attendees</h4>
+                            <p class="text-sm text-secondary">Regular event participants</p>
+                        </div>
+                    </div>
+                    <span class="text-xl font-bold text-primary">{{ stats.attendee_count }}</span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 rounded" style="background: rgba(255, 107, 157, 0.1); border: 1px solid rgba(255, 107, 157, 0.2);">
+                    <div class="flex items-center gap-3">
+                        <div style="font-size: 1.5rem; color: var(--secondary-color);">
+                            <i class="fas fa-users-cog"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-secondary">Organizers</h4>
+                            <p class="text-sm text-secondary">Event creators and managers</p>
+                        </div>
+                    </div>
+                    <span class="text-xl font-bold text-primary">{{ stats.organizer_count }}</span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 rounded" style="background: rgba(246, 224, 94, 0.1); border: 1px solid rgba(246, 224, 94, 0.2);">
+                    <div class="flex items-center gap-3">
+                        <div style="font-size: 1.5rem; color: var(--warning-color);">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-warning">Administrators</h4>
+                            <p class="text-sm text-secondary">System managers</p>
+                        </div>
+                    </div>
+                    <span class="text-xl font-bold text-primary">{{ stats.admin_count }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-chart-line"></i>
+                    System Health
+                </h2>
+            </div>
+            
+            <div class="flex flex-col gap-3">
+                <div class="flex items-center justify-between p-3 rounded" style="background: rgba(104, 211, 145, 0.1); border: 1px solid rgba(104, 211, 145, 0.2);">
+                    <div>
+                        <h4 class="font-semibold text-success">Active Events</h4>
+                        <p class="text-sm text-secondary">Events with registrations</p>
+                    </div>
+                    <span class="text-xl font-bold text-primary">{{ stats.events_with_registrations }}</span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 rounded" style="background: rgba(99, 179, 237, 0.1); border: 1px solid rgba(99, 179, 237, 0.2);">
+                    <div>
+                        <h4 class="font-semibold text-info">Average Attendance</h4>
+                        <p class="text-sm text-secondary">Per event registration rate</p>
+                    </div>
+                    <span class="text-xl font-bold text-primary">
+                        {% if stats.total_events > 0 %}
+                            {{ (stats.total_registrations / stats.total_events)|round(1) }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 rounded" style="background: rgba(160, 174, 192, 0.1); border: 1px solid rgba(160, 174, 192, 0.2);">
+                    <div>
+                        <h4 class="font-semibold text-secondary">Platform Usage</h4>
+                        <p class="text-sm text-secondary">Overall engagement level</p>
+                    </div>
+                    <span class="text-xl font-bold text-primary">
+                        {% if stats.total_users > 0 %}
+                            {{ ((stats.total_registrations / stats.total_users) * 100)|round }}%
+                        {% else %}
+                            0%
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <div class="p-3 rounded text-center" style="background: linear-gradient(135deg, rgba(104, 211, 145, 0.1), rgba(107, 115, 255, 0.1)); border: 1px solid rgba(104, 211, 145, 0.3);">
+                    <div style="font-size: 2rem; color: var(--success-color); margin-bottom: 0.5rem;">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h4 class="font-semibold text-success">System Status: Healthy</h4>
+                    <p class="text-sm text-secondary">All systems operational</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card[href]:hover, a.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.card[href], a.card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.card[href]:hover .fa-calendar-alt {
+    animation: pulse 1s ease-in-out;
+}
+
+.card[href]:hover .fa-users {
+    animation: bounce 1s ease-in-out;
+}
+
+.card[href]:hover .fa-map-marker-alt {
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes bounce {
+    0%, 20%, 53%, 80%, 100% { transform: translateY(0); }
+    40%, 43% { transform: translateY(-10px); }
+    70% { transform: translateY(-5px); }
+    90% { transform: translateY(-2px); }
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+</style>
+{% endblock %}

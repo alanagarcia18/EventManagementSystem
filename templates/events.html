@@ -1,0 +1,269 @@
+<!--
+Events Browser - Event Management System
+Main events discovery interface allowing users to search, filter, and register for events.
+
+HOW THE CODE WORKS:
+- Flask route `/events` fetches all events with search filtering
+- Database queries join events, venues, schedules, and user tables for complete information
+- JavaScript provides real-time search and interactive elements
+- Registration buttons connect to `/register_event/<id>` endpoints
+
+PAGE CONNECTIONS:
+- FROM: Dashboard (browse events button), Navigation (events link), Landing page (explore events)
+- TO: Event Detail pages (view details), Dashboard (navigation), My Registrations (after registration)
+- RELATED: Create Event (for organizers), Admin panel (for event oversight)
+
+FUNCTIONALITY:
+- Browse all available public events with search functionality
+- Real-time search filtering across event titles, descriptions, and venue names
+- Event registration/unregistration with capacity management
+- Visual capacity indicators with progress bars
+- Registration status indicators (available, registered, full)
+- Responsive card layout for mobile and desktop
+- Dynamic content updates without page refresh
+
+USER EXPERIENCE:
+- Clean, modern interface with consistent styling
+- Visual feedback for user actions (flash messages)
+- Accessibility features with proper ARIA labels
+- Mobile-responsive design with touch-friendly interactions
+
+DATA FLOW:
+1. User visits page → Flask loads events from database
+2. Events displayed with venue, organizer, and capacity info
+3. Search query → AJAX filters events in real-time  
+4. Registration click → POST to registration endpoint
+5. Success/error feedback → Flash messages displayed
+-->
+{% extends "base.html" %}
+
+{% block title %}Browse Events - Event Manager{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-calendar-days"></i>
+            Discover Events
+        </h1>
+        <p class="page-subtitle">
+            Find amazing events happening around you. From workshops to parties, there's something for everyone.
+        </p>
+    </div>
+    
+    <!-- Search Bar -->
+    <div class="card mb-4">
+        <form method="GET" action="{{ url_for('events') }}" class="search-form">
+            <div class="search-input-wrapper">
+                <input type="text" name="search" class="form-input search-input" placeholder="Search for events, venues, or descriptions..." value="{{ search }}">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+            <div class="search-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i>
+                    Search
+                </button>
+                {% if search %}
+                <a href="{{ url_for('events') }}" class="btn btn-outline">
+                    <i class="fas fa-times"></i>
+                    Clear
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+    
+    {% if search %}
+    <div class="mb-4">
+        <p class="text-secondary">
+            <i class="fas fa-info-circle"></i>
+            Showing results for "<strong>{{ search }}</strong>" - {{ events|length }} event(s) found
+        </p>
+    </div>
+    {% endif %}
+    
+    {% if events %}
+    <div class="grid grid-cols-1 gap-4">
+        {% for event in events %}
+        <div class="card" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(107, 115, 255, 0.02)); border: 1px solid rgba(107, 115, 255, 0.1);">
+            <div class="flex justify-between items-start mb-3">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <h3 class="text-xl font-semibold text-primary">{{ event.title }}</h3>
+                        
+                        {% if event.is_full %}
+                            <span class="status-badge status-full">
+                                <i class="fas fa-users"></i>
+                                Full
+                            </span>
+                        {% elif event.is_registered %}
+                            <span class="status-badge status-upcoming">
+                                <i class="fas fa-check-circle"></i>
+                                Registered
+                            </span>
+                        {% else %}
+                            <span class="status-badge status-available">
+                                <i class="fas fa-calendar-plus"></i>
+                                Available
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if event.description %}
+                    <p class="text-secondary mb-3">{{ event.description }}</p>
+                    {% endif %}
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm text-secondary mb-3">
+                        {% if event.venue_name %}
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-map-marker-alt" style="color: var(--primary-color);"></i>
+                            <span>{{ event.venue_name }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if event.start %}
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-clock" style="color: var(--secondary-color);"></i>
+                            <span>{{ event.start }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if event.organizer_name %}
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-user-tie" style="color: var(--success-color);"></i>
+                            <span>By {{ event.organizer_name }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-users" style="color: var(--warning-color);"></i>
+                            <span>{{ event.registered_count }}/{{ event.capacity }} attendees</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar for Capacity -->
+                    {% if event.capacity %}
+                    <div class="mb-3">
+                        <div style="background: var(--border-light); border-radius: 10px; height: 6px; overflow: hidden;">
+                            {% set percentage = (event.registered_count / event.capacity * 100)|round %}
+                            <div style="
+                                background: {% if percentage >= 100 %}var(--error-color){% elif percentage >= 80 %}var(--warning-color){% else %}var(--success-color){% endif %};
+                                width: {{ percentage }}%;
+                                height: 100%;
+                                border-radius: 10px;
+                                transition: width 0.3s ease;
+                            "></div>
+                        </div>
+                        <p class="text-sm text-secondary mt-1">{{ percentage }}% filled</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="flex flex-col gap-2 ml-4">
+                    <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-primary">
+                        <i class="fas fa-eye"></i>
+                        View Details
+                    </a>
+                    
+                    {% if not event.is_registered and not event.is_full %}
+                    <form method="POST" action="{{ url_for('register_event', event_id=event.id) }}" style="margin: 0;">
+                        <button type="submit" class="btn btn-success w-full">
+                            <i class="fas fa-calendar-plus"></i>
+                            Register
+                        </button>
+                    </form>
+                    {% elif event.is_registered %}
+                    <form method="POST" action="{{ url_for('unregister_event', event_id=event.id) }}" style="margin: 0;">
+                        <button type="submit" class="btn btn-outline w-full">
+                            <i class="fas fa-calendar-minus"></i>
+                            Unregister
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card text-center p-4">
+        <div style="font-size: 4rem; color: var(--text-light); margin-bottom: 1.5rem;">
+            <i class="fas fa-calendar-times"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-secondary mb-2">No Events Found</h3>
+        {% if search %}
+        <p class="text-secondary mb-3">
+            No events match your search criteria. Try searching for something else or 
+            <a href="{{ url_for('events') }}" class="text-primary">browse all events</a>.
+        </p>
+        {% else %}
+        <p class="text-secondary mb-3">
+            There are no events available at the moment. Check back later or 
+            {% if session.user_role == 'organizer' %}
+            <a href="{{ url_for('create_event') }}" class="text-primary">create your own event</a>!
+            {% else %}
+            ask an organizer to create some events!
+            {% endif %}
+        </p>
+        {% endif %}
+        
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+            <i class="fas fa-home"></i>
+            Back to Dashboard
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.search-form {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.search-input-wrapper {
+    flex: 1;
+    position: relative;
+    min-width: 300px;
+}
+
+.search-input {
+    width: 100%;
+    padding-left: 3rem !important;
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    pointer-events: none;
+}
+
+.search-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .search-form {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .search-input-wrapper {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    .search-actions {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}

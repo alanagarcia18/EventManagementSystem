@@ -1,0 +1,464 @@
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from db import DB
+from datetime import datetime, timedelta
+import re
+import json
+
+app = Flask(__name__)
+app.secret_key = 'your-secret-key-change-this-in-production'
+
+# Initialize database
+db = DB()
+
+@app.route('/')
+def landing():
+    """Beautiful landing page"""
+    return render_template('landing.html')
+
+@app.route('/about')
+def about():
+    """About page"""
+    stats = db.get_event_statistics()
+    return render_template('about.html', stats=stats)
+
+@app.route('/creator')
+def creator():
+    """Creator/Developer page"""
+    return render_template('creator.html')
+
+@app.route('/login-page')
+def login_page():
+    """Login page with mandatory authentication"""
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def login():
+    """Handle login"""
+    from werkzeug.security import check_password_hash
+    
+    email = request.form.get('email', '').strip()
+    password = request.form.get('password', '').strip()
+    
+    if not email:
+        flash('Please enter your email address', 'error')
+        return redirect(url_for('login_page'))
+    
+    user = db.get_user_by_email(email)
+    if not user:
+        flash('User not found. Please create an account first.', 'error')
+        return redirect(url_for('login_page'))
+    
+    # Check password if password_hash exists
+    if len(user) > 4 and user[4] and not check_password_hash(user[4], password):
+        flash('Invalid password. Please try again.', 'error')
+        return redirect(url_for('login_page'))
+    
+    # Store user in session
+    session['user_id'] = user[0]
+    session['user_name'] = user[1]
+    session['user_email'] = user[2]
+    session['user_role'] = user[3]
+    
+    flash(f'Welcome back, {user[1]}!', 'success')
+    return redirect(url_for('dashboard'))
+
+@app.route('/logout')
+def logout():
+    """Handle logout"""
+    session.clear()
+    flash('You have been logged out successfully', 'info')
+    return redirect(url_for('landing'))
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """User registration"""
+    if request.method == 'GET':
+        return render_template('register.html')
+    
+    name = request.form.get('name', '').strip()
+    email = request.form.get('email', '').strip()
+    role = request.form.get('role', 'attendee').strip()
+    
+    # Validation
+    if not name or not email:
+        flash('Name and email are required', 'error')
+        return render_template('register.html')
+    
+    # Email validation
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_pattern, email):
+        flash('Please enter a valid email address', 'error')
+        return render_template('register.html')
+    
+    try:
+        db.create_user(name, email, role)
+        flash(f'Account created successfully! You can now log in.', 'success')
+        return redirect(url_for('login_page'))
+    except Exception as e:
+        flash(f'Error creating account: {str(e)}', 'error')
+        return render_template('register.html')
+
+def login_required(f):
+    """Decorator to require login"""
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Please log in to access this page', 'error')
+            return redirect(url_for('login_page'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def role_required(required_role):
+    """Decorator to require specific role"""
+    from functools import wraps
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if 'user_id' not in session:
+                flash('Please log in to access this page', 'error')
+                return redirect(url_for('login_page'))
+            if session.get('user_role') != required_role:
+                flash('Access denied. Insufficient permissions.', 'error')
+                return redirect(url_for('dashboard'))
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    """Main dashboard"""
+    # Get some stats for the dashboard
+    events = db.get_events()
+    user_registrations = db.get_registrations_by_user(session['user_id'])
+    
+    # Get events organized by current user if they're an organizer
+    organized_events = []
+    if session.get('user_role') == 'organizer':
+        organized_events = db.get_events_by_organizer(session['user_id'])
+    
+    return render_template('dashboard.html', 
+                         events=events[:6],  # Show only first 6 events
+                         user_registrations=user_registrations[:5],  # Show only first 5 registrations
+                         organized_events=organized_events[:5])
+
+@app.route('/events')
+@login_required
+def events():
+    """Browse all events"""
+    search = request.args.get('search', '').strip()
+    events = db.search_events(search) if search else db.get_events()
+    
+    # Add registration count for each event
+    for event in events:
+        event['registered_count'] = len(db.get_event_attendees(event['id']))
+        event['is_full'] = event['registered_count'] >= event['capacity']
+        event['is_registered'] = any(reg['event_id'] == event['id'] 
+                                   for reg in db.get_registrations_by_user(session['user_id']))
+    
+    return render_template('events.html', events=events, search=search)
+
+@app.route('/event/<int:event_id>')
+@login_required
+def event_detail(event_id):
+    """Event details page"""
+    event = db.get_event(event_id)
+    if not event:
+        flash('Event not found', 'error')
+        return redirect(url_for('events'))
+    
+    attendees = db.get_event_attendees(event_id)
+    is_registered = any(reg['event_id'] == event_id 
+                       for reg in db.get_registrations_by_user(session['user_id']))
+    
+    return render_template('event_detail.html', 
+                         event=event, 
+                         attendees=attendees, 
+                         is_registered=is_registered,
+                         registered_count=len(attendees))
+
+@app.route('/register_event/<int:event_id>', methods=['POST'])
+@login_required
+def register_event(event_id):
+    """Register for an event"""
+    try:
+        db.register_user_for_event(session['user_id'], event_id)
+        flash('Successfully registered for the event!', 'success')
+    except Exception as e:
+        flash(f'Registration failed: {str(e)}', 'error')
+    
+    return redirect(url_for('event_detail', event_id=event_id))
+
+@app.route('/unregister_event/<int:event_id>', methods=['POST'])
+@login_required
+def unregister_event(event_id):
+    """Unregister from an event"""
+    try:
+        db.unregister_user_from_event(session['user_id'], event_id)
+        flash('Successfully unregistered from the event', 'info')
+    except Exception as e:
+        flash(f'Unregistration failed: {str(e)}', 'error')
+    
+    return redirect(url_for('event_detail', event_id=event_id))
+
+@app.route('/my-registrations')
+@login_required
+def my_registrations():
+    """User's registrations"""
+    registrations = db.get_registrations_by_user(session['user_id'])
+    
+    # Add status to each registration
+    for reg in registrations:
+        if reg.get('start'):
+            try:
+                start_dt = datetime.fromisoformat(reg['start'].replace('T', ' '))
+                now = datetime.now()
+                if start_dt < now:
+                    reg['status'] = 'past'
+                elif start_dt - now < timedelta(days=1):
+                    reg['status'] = 'soon'
+                else:
+                    reg['status'] = 'upcoming'
+            except:
+                reg['status'] = 'unknown'
+        else:
+            reg['status'] = 'tbd'
+    
+    return render_template('my_registrations.html', registrations=registrations)
+
+@app.route('/organizer')
+@login_required
+def organizer_panel():
+    """
+    Organizer panel - Available to any user who creates events
+    Shows user's created events and management tools
+    Connected to: Dashboard (navigation), Create Event (event creation), Event management
+    """
+    events = db.get_events_by_organizer(session['user_id'])
+    
+    # Add stats to each event - inline comments for functionality
+    for event in events:
+        attendees = db.get_event_attendees(event['id'])  # Get all registered users
+        event['registered_count'] = len(attendees)       # Count registrations
+        event['attendees'] = attendees                   # Store attendee data for management
+    
+    return render_template('organizer.html', events=events)
+
+@app.route('/my-events')  # Alternative route for clarity
+@login_required
+def my_events():
+    """Alternative route that redirects to organizer panel"""
+    return redirect(url_for('organizer_panel'))
+
+@app.route('/create-event', methods=['GET', 'POST'])
+@login_required
+def create_event():
+    """
+    Create new event - Available to all logged-in users
+    When a user creates an event, they become its organizer
+    Connected to: Organizer panel (management), Dashboard (navigation)
+    """
+    if request.method == 'GET':
+        venues = db.get_venues()  # Get all available venues
+        return render_template('create_event.html', venues=venues)
+    
+    # Form data extraction with validation
+    title = request.form.get('title', '').strip()
+    description = request.form.get('description', '').strip()
+    venue_id = request.form.get('venue_id')
+    capacity = request.form.get('capacity', '').strip()
+    start_date = request.form.get('start_date', '').strip()
+    start_time = request.form.get('start_time', '').strip()
+    end_date = request.form.get('end_date', '').strip()
+    end_time = request.form.get('end_time', '').strip()
+    
+    # Validation
+    if not all([title, venue_id, capacity, start_date, start_time]):
+        flash('Please fill in all required fields', 'error')
+        venues = db.get_venues()
+        return render_template('create_event.html', venues=venues)
+    
+    try:
+        capacity = int(capacity)
+        venue_id = int(venue_id)
+    except ValueError:
+        flash('Please enter valid numbers for capacity and venue', 'error')
+        venues = db.get_venues()
+        return render_template('create_event.html', venues=venues)
+    
+    # Combine date and time
+    start_datetime = f"{start_date} {start_time}"
+    end_datetime = None
+    if end_date and end_time:
+        end_datetime = f"{end_date} {end_time}"
+    
+    # Validate datetime format
+    try:
+        datetime.strptime(start_datetime, "%Y-%m-%d %H:%M")
+        if end_datetime:
+            datetime.strptime(end_datetime, "%Y-%m-%d %H:%M")
+    except ValueError:
+        flash('Please enter valid date and time formats', 'error')
+        venues = db.get_venues()
+        return render_template('create_event.html', venues=venues)
+    
+    # Check venue availability for the requested time slot
+    end_check = end_datetime if end_datetime else start_datetime
+    if not db.check_venue_availability(venue_id, start_datetime, end_check):
+        flash('This venue is already booked for the selected date and time. Please choose a different time or venue.', 'error')
+        venues = db.get_venues()
+        return render_template('create_event.html', venues=venues)
+    
+    try:
+        db.create_event(title, description, venue_id, session['user_id'], 
+                       capacity, start_datetime, end_datetime)
+        flash('Event created successfully!', 'success')
+        return redirect(url_for('organizer_panel'))
+    except Exception as e:
+        flash(f'Error creating event: {str(e)}', 'error')
+        venues = db.get_venues()
+        return render_template('create_event.html', venues=venues)
+
+@app.route('/admin')
+@role_required('admin')
+def admin_panel():
+    """Admin panel"""
+    stats = db.get_event_statistics()
+    events = db.get_events()
+    
+    # Add registration count to each event for display
+    for event in events:
+        event['registered_count'] = len(db.get_event_attendees(event['id']))
+    
+    return render_template('admin.html', stats=stats, events=events)
+
+@app.route('/admin/users')
+@role_required('admin')
+def admin_users():
+    """Manage users"""
+    users = db.get_users()
+    return render_template('admin_users.html', users=users)
+
+@app.route('/admin/venues')
+@role_required('admin')
+def admin_venues():
+    """Manage venues"""
+    venues = db.get_venues()
+    return render_template('admin_venues.html', venues=venues)
+
+@app.route('/admin/create-venue', methods=['POST'])
+@role_required('admin')
+def create_venue():
+    """Create new venue"""
+    name = request.form.get('name', '').strip()
+    address = request.form.get('address', '').strip()
+    capacity = request.form.get('capacity', '').strip()
+    
+    if not all([name, address, capacity]):
+        flash('All fields are required', 'error')
+        return redirect(url_for('admin_venues'))
+    
+    try:
+        capacity = int(capacity)
+        db.create_venue(name, address, capacity)
+        flash(f'Venue "{name}" created successfully!', 'success')
+    except Exception as e:
+        flash(f'Error creating venue: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_venues'))
+
+@app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
+@role_required('admin')
+def delete_user(user_id):
+    """Delete user"""
+    if user_id == session['user_id']:
+        flash('Cannot delete your own account', 'error')
+        return redirect(url_for('admin_users'))
+    
+    try:
+        db.delete_user(user_id)
+        flash('User deleted successfully', 'success')
+    except Exception as e:
+        flash(f'Error deleting user: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_users'))
+
+@app.route('/admin/delete_event/<int:event_id>', methods=['POST'])
+@role_required('admin')
+def delete_event(event_id):
+    """
+    Admin endpoint to delete events
+    Removes event and all associated registrations and schedules
+    """
+    try:
+        event = db.get_event(event_id)
+        if not event:
+            flash('Event not found.', 'error')
+            return redirect(url_for('admin_panel'))
+        
+        event_title = event['title']
+        if db.delete_event(event_id):
+            flash(f'Event "{event_title}" deleted successfully.', 'success')
+        else:
+            flash('Failed to delete event.', 'error')
+    except Exception as e:
+        flash(f'Error deleting event: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_panel'))
+
+# AI Chat Feature
+@app.route('/api/chat', methods=['POST'])
+@login_required
+def chat_with_ai():
+    """AI Chat feature using a simple response generator"""
+    try:
+        data = request.get_json()
+        user_message = data.get('message', '').strip()
+        
+        if not user_message:
+            return jsonify({'error': 'Message is required'}), 400
+        
+        # Generate AI response
+        ai_response = generate_ai_response(user_message)
+        
+        return jsonify({'response': ai_response})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def generate_ai_response(message):
+    """Generate AI-like responses for event management"""
+    message_lower = message.lower()
+    
+    if any(word in message_lower for word in ['event', 'create', 'organize']):
+        return "🎉 That's exciting! Creating events brings people together. Consider these tips: choose an engaging title, pick the right venue, and set a reasonable capacity. What type of event are you thinking about?"
+    
+    elif any(word in message_lower for word in ['register', 'join', 'attend']):
+        return "✨ Great choice! Attending events is a wonderful way to learn and connect. Browse our events page to find something that interests you. What kind of events do you enjoy most?"
+    
+    elif any(word in message_lower for word in ['help', 'how', 'guide']):
+        return "💡 I'm here to help! Our platform makes event management simple: \n• **Attendees** can browse and join events\n• **Organizers** can create and manage events\n• **Admins** oversee the entire system\n\nWhat would you like to know more about?"
+    
+    elif any(word in message_lower for word in ['venue', 'location', 'place']):
+        return "📍 Choosing the right venue is crucial! Consider capacity, accessibility, parking, and atmosphere. Our venue management system helps organizers find perfect spaces for their events."
+    
+    elif any(word in message_lower for word in ['time', 'schedule', 'when']):
+        return "⏰ Timing matters! Popular event times are evenings and weekends. Consider your audience's availability and avoid conflicts with major holidays or local events."
+    
+    elif any(word in message_lower for word in ['network', 'meet', 'people']):
+        return "🤝 Events are perfect for networking! Attend workshops, meetups, and conferences in your area. Our platform shows attendee lists so you can see who else is joining."
+    
+    elif any(word in message_lower for word in ['dark', 'light', 'mode', 'theme']):
+        return "🎨 Love the dark/light mode feature! You can toggle between themes using the moon/sun icon in the navigation. Dark mode is great for late-night event planning!"
+    
+    elif any(word in message_lower for word in ['ai', 'assistant', 'chat', 'bot']):
+        return "🤖 I'm your AI assistant for event management! I can help you with tips, answer questions, and guide you through using our platform. Just ask me anything!"
+    
+    else:
+        return f"🌟 Thanks for your message! I'm here to help with event management. Whether you want to create events, find events to attend, or learn about our features, I'm ready to assist. What can I help you with today?"
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5003)

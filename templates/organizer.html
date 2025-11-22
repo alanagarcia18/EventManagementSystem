@@ -1,0 +1,249 @@
+<!--
+Organizer Panel - Event Management System
+Displays and manages events created by the current user, providing comprehensive event management tools.
+
+PAGE CONNECTIONS:
+- FROM: Base navigation (My Events), Dashboard (quick access), Event creation success
+- TO: Create Event page (new event creation), Event detail pages (event management), Dashboard (navigation)
+
+FUNCTIONALITY:
+- Event overview dashboard with statistics
+- Event management interface for user-created events
+- Registration management for each event
+- Attendee list viewing and management
+- Quick access to event creation tools
+- Real-time statistics and metrics
+
+USER ROLES: Available to all authenticated users (manages their created events)
+-->
+{% extends "base.html" %}
+
+{% block title %}Organizer Panel - Event Manager{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page header with clear purpose and navigation context -->
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-users-cog"></i>
+            Event Organizer Panel
+        </h1>
+        <p class="page-subtitle">
+            Manage your events, track attendance, and create amazing experiences for your community.
+        </p>
+    </div>
+    
+    <!-- Quick Actions Dashboard - Provides immediate access to key functions -->
+    <div class="grid grid-cols-3 mb-4">
+        <!-- Create Event Quick Link - Primary call-to-action -->
+        <a href="{{ url_for('create_event') }}" class="card flex items-center gap-3" style="text-decoration: none; background: linear-gradient(135deg, rgba(107, 115, 255, 0.1), rgba(107, 115, 255, 0.05)); border: 1px solid var(--primary-color);">
+            <div style="font-size: 2.5rem; color: var(--primary-color);">
+                <i class="fas fa-plus-circle"></i>
+            </div>
+            <div>
+                <h4 class="font-semibold text-primary">Create New Event</h4>
+                <p class="text-secondary text-sm">Share your passion with others</p>
+            </div>
+        </a>
+        
+        <!-- Events Statistics Card - Shows total events created -->
+        <div class="card text-center" style="background: linear-gradient(135deg, rgba(255, 107, 157, 0.1), rgba(255, 107, 157, 0.05)); border: 1px solid var(--secondary-color);">
+            <div style="font-size: 2.5rem; color: var(--secondary-color); margin-bottom: 0.5rem;">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-primary">{{ events|length }}</h3>
+            <p class="text-secondary">Events Created</p>
+        </div>
+        
+        <!-- Attendees Statistics Card - Shows total registrations across all events -->
+        <div class="card text-center" style="background: linear-gradient(135deg, rgba(104, 211, 145, 0.1), rgba(104, 211, 145, 0.05)); border: 1px solid var(--success-color);">
+            <div style="font-size: 2.5rem; color: var(--success-color); margin-bottom: 0.5rem;">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-primary">
+                {% set total_attendees = events|sum(attribute='registered_count') %}
+                {{ total_attendees }}
+            </h3>
+            <p class="text-secondary">Total Attendees</p>
+        </div>
+    </div>
+    
+    {% if events %}
+    <!-- Event Management Section - Displays all user-created events -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-star"></i>
+                My Events
+            </h2>
+        </div>
+        
+        <div class="grid grid-cols-1 gap-4">
+            {% for event in events %}
+            <div class="card" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(107, 115, 255, 0.02)); border: 1px solid rgba(107, 115, 255, 0.1);">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-xl font-semibold text-primary">{{ event.title }}</h3>
+                            
+                            {% if event.registered_count >= event.capacity %}
+                                <span class="status-badge status-full">
+                                    <i class="fas fa-users"></i>
+                                    Full
+                                </span>
+                            {% else %}
+                                <span class="status-badge status-available">
+                                    <i class="fas fa-calendar-plus"></i>
+                                    {{ event.capacity - event.registered_count }} spots left
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if event.description %}
+                        <p class="text-secondary mb-3">{{ event.description }}</p>
+                        {% endif %}
+                        
+                        <div class="grid grid-cols-3 gap-4 text-sm text-secondary mb-3">
+                            {% if event.venue_name %}
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-map-marker-alt" style="color: var(--primary-color);"></i>
+                                <span>{{ event.venue_name }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            {% if event.start %}
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-clock" style="color: var(--secondary-color);"></i>
+                                <span>{{ event.start }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-users" style="color: var(--success-color);"></i>
+                                <span>{{ event.registered_count }}/{{ event.capacity }} attendees</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        {% if event.capacity %}
+                        <div class="mb-3">
+                            {% set percentage = (event.registered_count / event.capacity * 100)|round %}
+                            <div style="background: var(--border-light); border-radius: 10px; height: 8px; overflow: hidden;">
+                                <div style="
+                                    background: {% if percentage >= 100 %}var(--error-color){% elif percentage >= 80 %}var(--warning-color){% else %}var(--success-color){% endif %};
+                                    width: {{ percentage }}%;
+                                    height: 100%;
+                                    border-radius: 10px;
+                                    transition: width 0.3s ease;
+                                "></div>
+                            </div>
+                            <p class="text-sm text-secondary mt-1">{{ percentage }}% filled</p>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Attendee Avatars -->
+                        {% if event.attendees %}
+                        <div class="flex items-center gap-2">
+                            <div class="flex -space-x-2 overflow-hidden">
+                                {% for attendee in event.attendees[:5] %}
+                                <div class="user-avatar" style="width: 30px; height: 30px; font-size: 0.8rem; border: 2px solid white;" title="{{ attendee.name }}">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                {% endfor %}
+                                
+                                {% if event.attendees|length > 5 %}
+                                <div class="user-avatar" style="width: 30px; height: 30px; font-size: 0.8rem; border: 2px solid white; background: var(--text-secondary);" title="{{ event.attendees|length - 5 }} more attendees">
+                                    +{{ event.attendees|length - 5 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if event.attendees %}
+                            <span class="text-sm text-secondary ml-2">
+                                {{ event.attendees|length }} registered
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="flex flex-col gap-2 ml-4">
+                        <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-primary">
+                            <i class="fas fa-eye"></i>
+                            View Event
+                        </a>
+                        
+                        {% if event.attendees %}
+                        <button class="btn btn-secondary" onclick="toggleAttendees({{ event.id }})">
+                            <i class="fas fa-users"></i>
+                            View Attendees
+                        </button>
+                        {% else %}
+                        <button class="btn btn-outline" disabled style="opacity: 0.5;">
+                            <i class="fas fa-user-plus"></i>
+                            No Attendees
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Attendees List (Hidden by default) -->
+                {% if event.attendees %}
+                <div id="attendees-{{ event.id }}" style="display: none; border-top: 1px solid var(--border-light); margin-top: 1.5rem; padding-top: 1.5rem;">
+                    <h4 class="font-semibold text-primary mb-3">
+                        <i class="fas fa-users"></i>
+                        Attendee List ({{ event.attendees|length }})
+                    </h4>
+                    <div class="grid grid-cols-3 gap-3">
+                        {% for attendee in event.attendees %}
+                        <div class="flex items-center gap-3 p-3 rounded" style="background: rgba(107, 115, 255, 0.05); border: 1px solid rgba(107, 115, 255, 0.1);">
+                            <div class="user-avatar" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold text-primary text-sm">{{ attendee.name }}</h5>
+                                <p class="text-xs text-secondary">{{ attendee.email }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    {% else %}
+    <div class="card text-center p-4">
+        <div style="font-size: 5rem; color: var(--text-light); margin-bottom: 2rem;">
+            <i class="fas fa-calendar-plus"></i>
+        </div>
+        <h3 class="text-2xl font-semibold text-secondary mb-3">Ready to Create Your First Event?</h3>
+        <p class="text-secondary mb-4 text-lg">
+            As an organizer, you can create amazing events and bring people together. Start your journey now!
+        </p>
+        
+        <a href="{{ url_for('create_event') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus-circle"></i>
+            Create Your First Event
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleAttendees(eventId) {
+    const attendeesList = document.getElementById('attendees-' + eventId);
+    const button = event.target;
+    
+    if (attendeesList.style.display === 'none') {
+        attendeesList.style.display = 'block';
+        button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Attendees';
+    } else {
+        attendeesList.style.display = 'none';
+        button.innerHTML = '<i class="fas fa-users"></i> View Attendees';
+    }
+}
+</script>
+{% endblock %}

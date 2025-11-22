@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Venues - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Back Navigation -->
+    <div class="mb-4">
+        <a href="{{ url_for('admin_panel') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i>
+            Back to Admin Panel
+        </a>
+    </div>
+    
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-building"></i>
+            Venue Management
+        </h1>
+        <p class="page-subtitle">
+            Add and manage venues where events take place. Create spaces for amazing experiences!
+        </p>
+    </div>
+    
+    <!-- Add New Venue -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-plus-circle"></i>
+                Add New Venue
+            </h2>
+        </div>
+        
+        <form method="POST" action="{{ url_for('create_venue') }}">
+            <div class="grid grid-cols-3 gap-4">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-building"></i>
+                        Venue Name *
+                    </label>
+                    <input type="text" name="name" class="form-input" placeholder="Enter venue name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Address *
+                    </label>
+                    <input type="text" name="address" class="form-input" placeholder="Full address" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-users"></i>
+                        Capacity *
+                    </label>
+                    <input type="number" name="capacity" class="form-input" placeholder="Max capacity" min="1" required>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Add Venue
+            </button>
+        </form>
+    </div>
+    
+    <!-- Venues List -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-list"></i>
+                All Venues ({{ venues|length }})
+            </h2>
+        </div>
+        
+        {% if venues %}
+        <div class="grid grid-cols-1 gap-3">
+            {% for venue in venues %}
+            <div class="card" style="background: linear-gradient(135deg, rgba(107, 115, 255, 0.05), rgba(255, 107, 157, 0.05)); border: 1px solid rgba(107, 115, 255, 0.1);">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div style="font-size: 3rem; color: var(--primary-color);">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-xl font-semibold text-primary">{{ venue.name }}</h3>
+                            <p class="text-secondary flex items-center gap-2 mb-2">
+                                <i class="fas fa-map-marker-alt" style="color: var(--secondary-color);"></i>
+                                {{ venue.address }}
+                            </p>
+                            
+                            <div class="flex items-center gap-4">
+                                <span class="status-badge status-available">
+                                    <i class="fas fa-users"></i>
+                                    Capacity: {{ venue.capacity }}
+                                </span>
+                                
+                                <span class="text-sm text-secondary">
+                                    <i class="fas fa-hashtag"></i>
+                                    Venue ID: {{ venue.id }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col gap-2">
+                        <button class="btn btn-primary btn-sm" onclick="showVenueDetails({{ venue.id }})">
+                            <i class="fas fa-info-circle"></i>
+                            View Details
+                        </button>
+                        
+                        <button class="btn btn-danger btn-sm" onclick="deleteVenue({{ venue.id }}, '{{ venue.name }}')">
+                            <i class="fas fa-trash"></i>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Venue Details (Hidden by default) -->
+                <div id="venue-details-{{ venue.id }}" style="display: none; border-top: 1px solid var(--border-light); margin-top: 1.5rem; padding-top: 1.5rem;">
+                    <h4 class="font-semibold text-primary mb-3">
+                        <i class="fas fa-info"></i>
+                        Venue Information
+                    </h4>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <h5 class="font-semibold text-secondary mb-2">Basic Info</h5>
+                            <div class="flex flex-col gap-2 text-sm text-secondary">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-building" style="color: var(--primary-color); width: 16px;"></i>
+                                    <span><strong>Name:</strong> {{ venue.name }}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-map-marker-alt" style="color: var(--secondary-color); width: 16px;"></i>
+                                    <span><strong>Address:</strong> {{ venue.address }}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-users" style="color: var(--success-color); width: 16px;"></i>
+                                    <span><strong>Capacity:</strong> {{ venue.capacity }} people</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-hashtag" style="color: var(--warning-color); width: 16px;"></i>
+                                    <span><strong>Venue ID:</strong> {{ venue.id }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h5 class="font-semibold text-secondary mb-2">Usage Statistics</h5>
+                            <div class="flex flex-col gap-2 text-sm text-secondary">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-calendar" style="color: var(--info-color); width: 16px;"></i>
+                                    <span><strong>Events Hosted:</strong> 
+                                        {% set venue_events = events | selectattr('venue_id', 'equalto', venue.id) | list %}
+                                        {{ venue_events | length }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-chart-line" style="color: var(--success-color); width: 16px;"></i>
+                                    <span><strong>Status:</strong> Available</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-clock" style="color: var(--primary-color); width: 16px;"></i>
+                                    <span><strong>Added:</strong> Recently</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% else %}
+        <div class="text-center p-4">
+            <div style="font-size: 5rem; color: var(--text-light); margin-bottom: 2rem;">
+                <i class="fas fa-building"></i>
+            </div>
+            <h3 class="text-2xl font-semibold text-secondary mb-3">No Venues Available</h3>
+            <p class="text-secondary mb-4 text-lg">
+                Start by adding your first venue using the form above. Venues are essential for hosting events!
+            </p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Tips Card -->
+    <div class="card mt-4" style="background: linear-gradient(135deg, rgba(104, 211, 145, 0.1), rgba(104, 211, 145, 0.05)); border: 1px solid var(--success-color);">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-lightbulb"></i>
+                Venue Management Tips
+            </h3>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <h4 class="font-semibold text-success mb-2">Adding Venues</h4>
+                <ul class="text-sm text-secondary space-y-1">
+                    <li><i class="fas fa-check text-success"></i> Use descriptive names (e.g., "Main Conference Hall")</li>
+                    <li><i class="fas fa-check text-success"></i> Include full addresses for easy navigation</li>
+                    <li><i class="fas fa-check text-success"></i> Set realistic capacity limits for safety</li>
+                    <li><i class="fas fa-check text-success"></i> Consider accessibility requirements</li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="font-semibold text-success mb-2">Best Practices</h4>
+                <ul class="text-sm text-secondary space-y-1">
+                    <li><i class="fas fa-check text-success"></i> Regular capacity reviews based on usage</li>
+                    <li><i class="fas fa-check text-success"></i> Keep venue information up to date</li>
+                    <li><i class="fas fa-check text-success"></i> Monitor venue utilization patterns</li>
+                    <li><i class="fas fa-check text-success"></i> Consider backup venues for popular times</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showVenueDetails(venueId) {
+    const detailsDiv = document.getElementById('venue-details-' + venueId);
+    const button = event.target;
+    
+    if (detailsDiv.style.display === 'none') {
+        detailsDiv.style.display = 'block';
+        button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Details';
+    } else {
+        detailsDiv.style.display = 'none';
+        button.innerHTML = '<i class="fas fa-info-circle"></i> View Details';
+    }
+}
+
+function deleteVenue(venueId, venueName) {
+    if (confirm(`Are you sure you want to delete "${venueName}"? This action cannot be undone and may affect existing events.`)) {
+        // Create a form dynamically to send POST request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/delete-venue/' + venueId;
+        form.style.display = 'none';
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

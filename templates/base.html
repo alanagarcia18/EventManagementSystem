@@ -1,0 +1,157 @@
+<!--
+Base Template - Event Management System
+Shared layout with navigation, theme toggle, AI assistant, and flash messages
+Connected to: All pages (shared layout), Theme system (dark/light mode), AI chat system
+Functionality: Navigation, authentication state, theme switching, AI assistance, responsive design
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Event Manager{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    {% if session.user_id %}
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-calendar-heart"></i>
+                {% if session.user_role == 'admin' %}
+                    <a href="{{ url_for('admin_panel') }}" class="brand-link">Event Manager</a>
+                {% else %}
+                    <span>Event Manager</span>
+                {% endif %}
+            </div>
+            
+            <div class="nav-links">
+                {% if session.user_role == 'admin' %}
+                    <!-- Admin navigation - empty for cleaner interface -->
+                {% else %}
+                    <!-- Regular user navigation -->
+                    <a href="{{ url_for('dashboard') }}" class="nav-link {{ 'active' if request.endpoint == 'dashboard' }}">
+                        <i class="fas fa-home"></i>
+                        Dashboard
+                    </a>
+                    <a href="{{ url_for('organizer_panel') }}" class="nav-link {{ 'active' if request.endpoint == 'organizer_panel' }}">
+                        <i class="fas fa-users-cog"></i>
+                        Organizer Panel
+                    </a>
+                    <a href="{{ url_for('my_events') }}" class="nav-link {{ 'active' if request.endpoint == 'my_events' }}">
+                        <i class="fas fa-calendar-user"></i>
+                        My Created Events
+                    </a>
+                {% endif %}
+            </div>
+            
+            <div class="nav-user">
+                <!-- Theme Toggle -->
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                    <i class="fas fa-moon" id="theme-icon"></i>
+                </button>
+                
+                <!-- AI Assistant Toggle - Available to non-admin users only -->
+                {% if session.user_id and session.user_role != 'admin' %}
+                <button class="ai-toggle" onclick="toggleAI()" title="Event Assistant Chat">
+                    <i class="fas fa-robot"></i>
+                </button>
+                {% endif %}
+                
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name">{{ session.user_name }}</span>
+                    </div>
+                </div>
+                <a href="{{ url_for('logout') }}" class="logout-btn" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        <div class="flash-content">
+                            {% if category == 'success' %}
+                                <i class="fas fa-check-circle"></i>
+                            {% elif category == 'error' %}
+                                <i class="fas fa-exclamation-circle"></i>
+                            {% elif category == 'info' %}
+                                <i class="fas fa-info-circle"></i>
+                            {% else %}
+                                <i class="fas fa-bell"></i>
+                            {% endif %}
+                            <span>{{ message }}</span>
+                        </div>
+                        <button class="flash-close" onclick="this.parentElement.remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Main Content -->
+    <main class="main-content {{ 'no-nav' if not session.user_id }}">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- AI Assistant Chat Widget - Available to non-admin users only -->
+    {% if session.user_id and session.user_role != 'admin' %}
+    <div class="ai-chat-widget" id="aiChatWidget">
+        <div class="ai-chat-header">
+            <div class="ai-chat-title">
+                <i class="fas fa-robot"></i>
+                Event Assistant
+            </div>
+            <button class="ai-chat-close" onclick="toggleAI()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="ai-chat-messages" id="aiChatMessages">
+            <div class="ai-message ai">
+                <div class="ai-message-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="ai-message-content">
+                    Hi! 🤖 I'm your Event Planning Assistant. I can help you with creating events, choosing venues, setting dates, managing capacity, and answering any questions about event organization. Ask me anything!
+                </div>
+            </div>
+        </div>
+        <div class="ai-chat-input-container">
+            <form class="ai-chat-input-form" id="aiChatForm">
+                <input type="text" class="ai-chat-input" id="aiChatInput" placeholder="Ask me anything about events..." autocomplete="off">
+                <button type="submit" class="ai-chat-send" id="aiChatSend">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+     <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

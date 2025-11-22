@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block title %}Event Details - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-calendar-alt"></i>
+            Event Details - Admin View
+        </h1>
+        <p class="page-subtitle">
+            Complete administrative overview of event information
+        </p>
+    </div>
+    
+    <!-- Navigation Back -->
+    <div class="mb-4">
+        <a href="{{ url_for('admin_events') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i>
+            Back to Events Management
+        </a>
+    </div>
+    
+    <!-- Event Information -->
+    <div class="grid grid-cols-2 gap-4 mb-4">
+        <!-- Basic Event Info -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-info-circle"></i>
+                    Event Information
+                </h3>
+            </div>
+            
+            <div class="event-details">
+                <div class="detail-item">
+                    <label class="detail-label">Event Title:</label>
+                    <span class="detail-value">{{ event.title }}</span>
+                </div>
+                
+                <div class="detail-item">
+                    <label class="detail-label">Organizer:</label>
+                    <span class="detail-value">{{ event.organizer_name or 'Unknown' }}</span>
+                </div>
+                
+                <div class="detail-item">
+                    <label class="detail-label">Description:</label>
+                    <span class="detail-value">{{ event.description or 'No description provided' }}</span>
+                </div>
+                
+                <div class="detail-item">
+                    <label class="detail-label">Capacity:</label>
+                    <span class="detail-value">{{ event.capacity }} attendees</span>
+                </div>
+                
+                <div class="detail-item">
+                    <label class="detail-label">Current Registrations:</label>
+                    <span class="detail-value">
+                        <span class="status-badge status-info">
+                            {{ registered_count }}/{{ event.capacity }}
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Date & Time Info -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-clock"></i>
+                    Schedule & Venue
+                </h3>
+            </div>
+            
+            <div class="event-details">
+                <div class="detail-item">
+                    <label class="detail-label">Start Date & Time:</label>
+                    <span class="detail-value">{{ event.start or 'Not scheduled' }}</span>
+                </div>
+                
+                <div class="detail-item">
+                    <label class="detail-label">End Date & Time:</label>
+                    <span class="detail-value">{{ event.end or 'Not specified' }}</span>
+                </div>
+                
+                {% if venue %}
+                <div class="detail-item">
+                    <label class="detail-label">Venue:</label>
+                    <span class="detail-value">{{ venue[1] }}</span>
+                </div>
+                
+                <div class="detail-item">
+                    <label class="detail-label">Venue Address:</label>
+                    <span class="detail-value">{{ venue[2] }}</span>
+                </div>
+                
+                <div class="detail-item">
+                    <label class="detail-label">Venue Capacity:</label>
+                    <span class="detail-value">{{ venue[3] }} max capacity</span>
+                </div>
+                {% else %}
+                <div class="detail-item">
+                    <label class="detail-label">Venue:</label>
+                    <span class="detail-value">No venue assigned</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendee Information -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-users"></i>
+                Attendee Information
+            </h3>
+            <p class="card-subtitle">
+                Complete list of registered attendees ({{ registered_count }} total)
+            </p>
+        </div>
+        
+        {% if attendees %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Attendee Name</th>
+                        <th>Email Address</th>
+                        <th>Role</th>
+                        <th>Registration Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attendee in attendees %}
+                    <tr>
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <div class="user-avatar-small">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <span class="font-semibold">{{ attendee.name }}</span>
+                            </div>
+                        </td>
+                        <td>{{ attendee.email }}</td>
+                        <td>
+                            <span class="role-badge role-{{ attendee.role }}">
+                                {{ attendee.role.title() }}
+                            </span>
+                        </td>
+                        <td>{{ attendee.registration_date or 'Unknown' }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('remove_attendee', event_id=event.id, user_id=attendee.id) }}" 
+                                  style="display: inline;" 
+                                  onsubmit="return confirm('Remove {{ attendee.name }} from this event?')">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Remove Attendee">
+                                    <i class="fas fa-user-minus"></i>
+                                    Remove
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-users-slash"></i>
+            <h4>No Attendees Registered</h4>
+            <p>This event has no registered attendees yet.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Admin Actions -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-cog"></i>
+                Administrative Actions
+            </h3>
+        </div>
+        
+        <div class="admin-actions">
+            <form method="POST" action="{{ url_for('admin_delete_event', event_id=event.id) }}" 
+                  style="display: inline;" 
+                  onsubmit="return confirm('Are you sure you want to delete this event? This will remove all registrations and cannot be undone.')">
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash"></i>
+                    Delete Event
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.event-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem;
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+}
+
+.detail-label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.detail-value {
+    font-size: 1rem;
+    color: var(--text-primary);
+    word-wrap: break-word;
+}
+
+.table-container {
+    overflow-x: auto;
+    margin-top: 1rem;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-white);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.data-table th,
+.data-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.data-table th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.025em;
+}
+
+.data-table tbody tr:hover {
+    background: var(--bg-secondary);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.user-avatar-small {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.role-attendee {
+    background: rgba(107, 115, 255, 0.1);
+    color: var(--primary-color);
+}
+
+.role-organizer {
+    background: rgba(255, 107, 157, 0.1);
+    color: var(--secondary-color);
+}
+
+.role-admin {
+    background: rgba(246, 224, 94, 0.1);
+    color: var(--warning-color);
+}
+
+.admin-actions {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    flex-wrap: wrap;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text-light);
+}
+
+.empty-state h4 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+    .grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+    
+    .admin-actions {
+        flex-direction: column;
+    }
+    
+    .data-table {
+        font-size: 0.875rem;
+    }
+}
+</style>
+{% endblock %}

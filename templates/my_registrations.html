@@ -1,0 +1,196 @@
+<!--
+My Registrations - Event Management System
+Displays user's registered events with status tracking and management capabilities.
+
+PAGE CONNECTIONS:
+- FROM: Dashboard (my events), Navigation (my registrations), Event registration success
+- TO: Event detail pages (view event info), Events browser (find more events)
+
+FUNCTIONALITY:
+- Personal event registration dashboard
+- Event status tracking (upcoming/past/soon)
+- Registration management and unregistration
+- Calendar view of registered events
+- Status indicators with color coding
+- Event reminder and notification display
+
+USER ROLES: Available to all authenticated users (shows their registrations)
+FEATURES: Real-time status updates, event countdown, registration history
+-->
+{% extends "base.html" %}
+
+{% block title %}My Events - Event Manager{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-ticket"></i>
+            My Registered Events
+        </h1>
+        <p class="page-subtitle">
+            Keep track of all the amazing events you're attending. Don't miss out on any experience!
+        </p>
+    </div>
+    
+    {% if registrations %}
+    <div class="grid grid-cols-1 gap-4">
+        {% for reg in registrations %}
+        <div class="card {% if reg.status == 'past' %}opacity-75{% endif %}" 
+             style="background: {% if reg.status == 'soon' %}linear-gradient(135deg, rgba(252, 129, 129, 0.1), rgba(252, 129, 129, 0.05)){% elif reg.status == 'past' %}linear-gradient(135deg, rgba(160, 174, 192, 0.1), rgba(160, 174, 192, 0.05)){% else %}linear-gradient(135deg, rgba(104, 211, 145, 0.1), rgba(104, 211, 145, 0.05)){% endif %}; 
+                    border: 1px solid {% if reg.status == 'soon' %}var(--error-color){% elif reg.status == 'past' %}var(--text-light){% else %}var(--success-color){% endif %};">
+            
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-3">
+                        <h3 class="text-xl font-semibold text-primary">{{ reg.event_title }}</h3>
+                        
+                        {% if reg.status == 'soon' %}
+                            <span class="status-badge" style="background: rgba(252, 129, 129, 0.1); color: var(--error-color);">
+                                <i class="fas fa-exclamation-circle"></i>
+                                Starting Soon!
+                            </span>
+                        {% elif reg.status == 'past' %}
+                            <span class="status-badge status-past">
+                                <i class="fas fa-check"></i>
+                                Completed
+                            </span>
+                        {% elif reg.status == 'upcoming' %}
+                            <span class="status-badge status-upcoming">
+                                <i class="fas fa-calendar"></i>
+                                Upcoming
+                            </span>
+                        {% else %}
+                            <span class="status-badge" style="background: rgba(99, 179, 237, 0.1); color: var(--info-color);">
+                                <i class="fas fa-clock"></i>
+                                TBD
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if reg.description %}
+                    <p class="text-secondary mb-3">{{ reg.description }}</p>
+                    {% endif %}
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm text-secondary">
+                        {% if reg.venue_name %}
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-map-marker-alt" style="color: var(--primary-color);"></i>
+                            <span>{{ reg.venue_name }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if reg.start %}
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-clock" style="color: var(--secondary-color);"></i>
+                            <span>{{ reg.start }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if reg.organizer_name %}
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-user-tie" style="color: var(--success-color);"></i>
+                            <span>By {{ reg.organizer_name }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-calendar-check" style="color: var(--warning-color);"></i>
+                            <span>Registered on {{ reg.registration_date }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col gap-2 ml-4">
+                    <a href="{{ url_for('event_detail', event_id=reg.event_id) }}" class="btn btn-primary">
+                        <i class="fas fa-eye"></i>
+                        View Event
+                    </a>
+                    
+                    {% if reg.status != 'past' %}
+                    <form method="POST" action="{{ url_for('unregister_event', event_id=reg.event_id) }}" style="margin: 0;">
+                        <button type="submit" class="btn btn-outline w-full" onclick="return confirm('Are you sure you want to unregister from {{ reg.event_title }}?')">
+                            <i class="fas fa-calendar-minus"></i>
+                            Unregister
+                        </button>
+                    </form>
+                    {% else %}
+                    <button class="btn btn-outline w-full" disabled style="opacity: 0.5;">
+                        <i class="fas fa-history"></i>
+                        Past Event
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-rocket"></i>
+                What's Next?
+            </h2>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+            <a href="{{ url_for('events') }}" class="card flex items-center gap-3" style="text-decoration: none; background: linear-gradient(135deg, rgba(107, 115, 255, 0.1), rgba(107, 115, 255, 0.05)); border: 1px solid var(--primary-color);">
+                <div style="font-size: 2rem; color: var(--primary-color);">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-primary">Discover More Events</h4>
+                    <p class="text-secondary text-sm">Find new experiences to join</p>
+                </div>
+            </a>
+            
+            {% if session.user_role == 'organizer' %}
+            <a href="{{ url_for('create_event') }}" class="card flex items-center gap-3" style="text-decoration: none; background: linear-gradient(135deg, rgba(255, 107, 157, 0.1), rgba(255, 107, 157, 0.05)); border: 1px solid var(--secondary-color);">
+                <div style="font-size: 2rem; color: var(--secondary-color);">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-secondary">Create Your Own Event</h4>
+                    <p class="text-secondary text-sm">Share your passion with others</p>
+                </div>
+            </a>
+            {% else %}
+            <a href="{{ url_for('dashboard') }}" class="card flex items-center gap-3" style="text-decoration: none; background: linear-gradient(135deg, rgba(104, 211, 145, 0.1), rgba(104, 211, 145, 0.05)); border: 1px solid var(--success-color);">
+                <div style="font-size: 2rem; color: var(--success-color);">
+                    <i class="fas fa-home"></i>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-success">Back to Dashboard</h4>
+                    <p class="text-secondary text-sm">See what's happening</p>
+                </div>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% else %}
+    <div class="card text-center p-4">
+        <div style="font-size: 5rem; color: var(--text-light); margin-bottom: 2rem;">
+            <i class="fas fa-calendar-times"></i>
+        </div>
+        <h3 class="text-2xl font-semibold text-secondary mb-3">No Events Yet</h3>
+        <p class="text-secondary mb-4 text-lg">
+            You haven't registered for any events yet. Explore our amazing events and find something you love!
+        </p>
+        
+        <div class="flex justify-center gap-3">
+            <a href="{{ url_for('events') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-search"></i>
+                Browse Events
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline btn-lg">
+                <i class="fas fa-home"></i>
+                Dashboard
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
