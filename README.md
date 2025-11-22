@@ -55,4 +55,4 @@ python3 app.py
 - **Interactive Chat** - Real-time conversation with event planning AI
 - **Smart Responses** - Keyword-based intelligent responses for common questions
 
-**Built with ❤️ by Jahzara Broaster (Backend) and Alana Garcia (Frontend)**
+**Built with ❤️ by Jahzara Broaster (Frontend) and Alana Garcia (Backend)**
